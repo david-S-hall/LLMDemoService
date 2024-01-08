@@ -1,0 +1,43 @@
+.markdown{
+    width: 100%;
+    margin: 0;
+}
+
+.markdown > :is(*){
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    font-size: medium;
+    font-weight: 300;
+}
+
+.markdown :is(pre,p,h1,h2,h3,h4,h5) {
+    margin: 8px 0;
+}
+.markdown code {
+    white-space: pre-wrap;
+    font-size: medium;
+    font-weight: 300;
+}
+
+.markdown table {
+    margin: 10px 4%;
+    width: 92%;
+    border-collapse: collapse;
+}
+
+.markdown :is(th,td) {
+    border: 1px solid #AFAFAF;
+}
+
+.markdown .codeTitle{
+    background: #333333;
+    height: 2em;
+    padding: 3px 1em;
+    border-radius: .375rem .375rem 0 0;
+}
+
+.markdown .codeTitleText{
+    color: #ffffff;
+    font-family: "DM Mono", "Monaco", monospace;
+}

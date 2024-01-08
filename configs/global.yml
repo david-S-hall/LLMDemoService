@@ -1,0 +1,49 @@
+base:
+  database_name: &database_name articles
+  frontend_route_def: configs/route.yml
+  cache_dir: ./cache
+  data_dir: ./data
+
+api:
+  model:
+    host: '0.0.0.0'
+    port: 10080
+  view:
+    host: '0.0.0.0'
+    port: 10081
+  ui:
+    host: '0.0.0.0'
+    port: 8501
+
+llm:
+  model_1:
+    # 选择模型类型的关键字段，目前可选项为['ChatGLM', 'Qwen']
+    type: ChatGLM
+    llm_name_or_path: THUDM/chatglm3-6b
+    multi_gpu_model_cache_dir: ./cache/temp_model_dir
+    num_gpus: 1
+    fp16: true
+    quantization_bit: null
+    ptuning_checkpoint: null
+    pre_seq_len: null
+    prefix_projection: false
+  # model_2:
+  #   type: Qwen
+  #   llm_name_or_path: Qwen/Qwen-7B-Chat  # 本地模型文件 or huggingface远程仓库
+  #   device_map: auto
+  #   fp16: false
+  #   bf16: false
+  #   quantization_bit: null
+
+embeddings:
+  model_name: BAAI/bge-base-zh-v1.5
+  model_kwargs:
+    device: cuda
+  encode_kwargs:
+    normalize_embeddings: true
+  query_instruction: "为这个句子生成表示以用于检索相关文章："
+
+mongo:
+  database: edu_chat
+  host: 0.0.0.0
+  port: 27017

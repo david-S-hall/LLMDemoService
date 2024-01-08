@@ -1,0 +1,28 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "start": "next start"
+  },
+  "type": "module",
+  "dependencies": {
+    "antd": "^5.12.5",
+    "cookie": "^0.6.0",
+    "file-saver": "^2.0.5",
+    "js-yaml": "^4.1.0",
+    "next": "latest",
+    "react": "18.2.0",
+    "react-cookie": "^6.1.1",
+    "react-dom": "18.2.0",
+    "react-markdown": "^9.0.1",
+    "react-syntax-highlighter": "^15.5.0",
+    "redux-persist": "^6.0.0",
+    "rehype-highlight": "^7.0.0",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
