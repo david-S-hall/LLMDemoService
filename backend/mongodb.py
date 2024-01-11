@@ -14,40 +14,36 @@ class MongoDBPool(object):
         self.mongoclient = pymongo.MongoClient(host=host, port=port)
         self.chatdb = self.mongoclient[database]
 
-    def build_geneartion(self, payload, collection='generation'):
-        payload['feedback'] = []
+    def build(self, payload, collection='generation'):
         insert_gen = self.chatdb[collection].insert_one(payload)
         payload['_id'] = insert_gen.inserted_id
         return payload
+    
+    def get(self, _id=None, condition={}, collection='generation'):
+        if _id and not isinstance(_id, ObjectId):
+            _id = ObjectId(_id)
+            condition['_id'] = _id
+        return self.chatdb[collection].find_one(condition)
 
-    def feedback(self, query_id, feedback_dict, collection='generation'):
-        if not isinstance(query_id, ObjectId):
-            query_id = ObjectId(query_id)
-        if feedback_dict.get('query_id', None):
-            del feedback_dict['query_id']
-        generation_dict = self.chatdb[collection].find_one({'_id': query_id})
-        generation_dict['feedback'].append(feedback_dict)
-        self.chatdb[collection].update_one({'_id': query_id}, {'$set': generation_dict})
+    def update(self, _id, content={}, collection='generation'):
+        if not isinstance(_id, ObjectId):
+            _id = ObjectId(_id)
+        self.chatdb[collection].update_one({'_id': _id}, {'$set': content})
         return True
     
-    def get(self, query_id="", collection='generation'):
-        if not isinstance(query_id, ObjectId):
-            query_id = ObjectId(query_id)
-        return self.chatdb[collection].find_one({'_id': query_id})
-
-    def update(self, query_id, content, collection='generation'):
-        if not isinstance(query_id, ObjectId):
-            query_id = ObjectId(query_id)
-        self.chatdb[collection].update_one({'_id': query_id}, {'$set': content})
-        return True
-
-    def export_feedback(self, collection='generation'):
-        data = self.chatdb[collection].find()
+    def export_chat(self):
+        data = self.chatdb['chat'].find()
         results = []
-        for i, generation in enumerate(data):
-            del generation['_id']
-            results.append(generation)
+        for i, chat in enumerate(data):
+            chat['feedback'] = []
+            for j, feedback_id in enumerate(chat['feedback_ids']):
+                feedback_j = self.get(feedback_id, collection='feedback')
+                del feedback_j['_id']
+                chat['feedback'].append(feedback_j)
 
+            del chat['_id']
+            del chat['feedback_ids']
+            results.append(chat)
         return results
     
     def drop_collection(self, collection='generation'):

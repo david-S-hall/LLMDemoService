@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowDownOutlined } from '@ant-design/icons';
 import { Flex, Space, FloatButton } from 'antd';
 
@@ -20,7 +20,7 @@ export default function ScrollPane ({ children, scrollList, parentRef }) {
     }
     const toggleIsBackTopVis = () => {
         const node = parentRef.current;
-        if (node.scrollTop > node.scrollHeight - node.clientHeight - 300){
+        if (node.scrollTop > node.scrollHeight - node.clientHeight - 200){
             setIsBackTopVis(false);
         } else {
             setIsBackTopVis(true);
@@ -52,7 +52,7 @@ export default function ScrollPane ({ children, scrollList, parentRef }) {
     }, []);
 
     return (
-        <Flex vertical style={{ width: '100%', padding: '5px 0' }} >
+        <Flex vertical style={{ width: '100%', padding: '5px 20px' }}>
             <Space direction='vertical' size='small' >
             {children}
             {

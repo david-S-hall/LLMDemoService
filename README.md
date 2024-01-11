@@ -1,5 +1,7 @@
 # A Simple LLM DEMO Service for Deployment
 
+![Chat UI](image/chat_page.png)
+
 ## Installation
 
 ```bash
@@ -34,14 +36,44 @@
 
 ## Configuration
 
-[Revise]configs/global.yml
+### OAuth
+
+**[Mandatory]** Create OAuth Application of Github & Google first and fill the section `frontend-env` in `configs/global.yml` as follow:
+
+```yaml
+frontend:
+  env:
+    NEXTAUTH_URL: 'http://localhost:8501'
+    NEXTAUTH_SECRET: 'A CHOSEN SECRET TOKEN'
+
+    GITHUB_ID: "$GITHUB_ID"
+    GITHUB_SECRET: "$GITHUB_SECRET"
+
+    GOOGLE_ID: "$GOOGLE_ID"
+    GOOGLE_SECRET: "GOOGLE_SECRET"
+```
 
 ### LLM service
-- Default port: 10080
+
+Configure the section `api-model` in `configs/global.yml` as follow:
+
+```yaml
+api:
+  model:
+    host: '0.0.0.0'
+    port: 10080
+```
 
 ### MongoDB
-- Revise `/etc/mongodb.conf`,and startup mongodb service by `systemctl`|`service`
-- **（Mandatory）** Fill the `host`&`port` in `mongo` section of `configs/global.yml`
+- Revise `/etc/mongodb.conf`, and startup mongodb service by `systemctl`|`service`
+- **[Mandatory]** Configure the `mongo` section in `configs/global.yml` as follow:
+
+```yaml
+mongo:
+  database: chat
+  host: 0.0.0.0
+  port: 27017
+```
 
 ## Maintance
 

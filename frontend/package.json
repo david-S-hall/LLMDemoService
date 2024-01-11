@@ -12,6 +12,7 @@
     "file-saver": "^2.0.5",
     "js-yaml": "^4.1.0",
     "next": "latest",
+    "next-auth": "^4.24.5",
     "react": "18.2.0",
     "react-cookie": "^6.1.1",
     "react-dom": "18.2.0",
@@ -24,5 +25,9 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "20.10.7",
+    "typescript": "5.3.3"
   }
 }

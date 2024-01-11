@@ -1,25 +1,21 @@
-import { useState } from 'react';
 import { UploadOutlined } from '@ant-design/icons';
 import { Flex, Button, Input } from 'antd';
+
+import { useChatState } from 'components/chatstate'
 
 const { TextArea } = Input;
 
 
-export default function ChatInput ({ callback, submitting }) {
-    const [userInput, setUserInput] = useState('');
-    const disabled = (userInput === '') ? true : false;
+export default function ChatInput ({}) {
+    const chatState = useChatState();
 
-    const isSubmitted = () => {
-        setUserInput('');
-    }
     const onSubmit = () => {
-        const text = userInput;
-        callback(text, isSubmitted);
+        chatState.setLoading(true)
     }
     const onPressEnter = (event) => {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
-            if (userInput.trim() !== ""){
+            if (chatState.userInput.trim() !== ""){
                 onSubmit();
             }
         }
@@ -38,18 +34,18 @@ export default function ChatInput ({ callback, submitting }) {
         <Flex align='flex-end'>
             <TextArea
                 id='query_input'
-                placeholder="请输入要进行命题的文章:"
-                value={ userInput }
+                placeholder="Message:"
+                value={ chatState.userInput }
                 autoSize={{ maxRows: 20 }}
                 size='middle'
                 bordered={false}
-                disabled={ submitting }
-                onChange={ (e) => setUserInput(e.target.value) }
+                disabled={ chatState.loading }
+                onChange={ (e) => chatState.setUserInput(e.target.value) }
                 onPressEnter={ onPressEnter }/>
             <Button
                 type="primary"
                 size='middle'
-                disabled={ disabled || submitting }
+                disabled={ chatState.userInput === '' || chatState.loading }
                 // style={{background: '#5050A0'}}
                 icon={<UploadOutlined />}
                 onClick={ onClick }/>

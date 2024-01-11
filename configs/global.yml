@@ -15,6 +15,18 @@ api:
     host: '0.0.0.0'
     port: 8501
 
+frontend:
+  env:
+    # for next-auth
+    NEXTAUTH_URL: 'http://localhost:8501' # for dev
+    NEXTAUTH_SECRET: 'A CHOSEN SECRET TOKEN'
+
+    GITHUB_ID: "$GITHUB_ID"
+    GITHUB_SECRET: "$GITHUB_SECRET"
+
+    GOOGLE_ID: "$GOOGLE_ID"
+    GOOGLE_SECRET: "GOOGLE_SECRET"
+
 llm:
   model_1:
     # 选择模型类型的关键字段，目前可选项为['ChatGLM', 'Qwen']
@@ -44,6 +56,6 @@ embeddings:
   query_instruction: "为这个句子生成表示以用于检索相关文章："
 
 mongo:
-  database: edu_chat
+  database: chat
   host: 0.0.0.0
   port: 27017

@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react';
 
 import { CopyOutlined, CheckOutlined } from '@ant-design/icons';
 import { UserOutlined, MessageTwoTone } from '@ant-design/icons';
 import { LikeOutlined, DislikeOutlined } from '@ant-design/icons';
 import { ConfigProvider, theme, Typography  } from 'antd';
-import { Card, Flex, Space, Modal } from 'antd';
-import { Avatar, Input, Button, Spin, Skeleton, Tag } from 'antd';
+import { Card, Flex, Modal } from 'antd';
+import { Avatar, Input, Button  } from 'antd';
 
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
-import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus, coyWithoutShadows, darcula } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 const { Text, Title, Paragraph } = Typography;
@@ -60,7 +61,7 @@ function Markdown ( {children} ) {
     )
 }
 
-function Feedback ( {query_id, response, callback} ) {
+function Feedback ( {chat_id, turn_idx, response, callback} ) {
     const [rating, setRating] = useState(-1);
     const [reason, setReason] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -76,7 +77,8 @@ function Feedback ( {query_id, response, callback} ) {
     const ratingOk = () => {
         setIsModalOpen(false);
         callback({
-            query_id: query_id,
+            chat_id: chat_id,
+            turn_idx: turn_idx,
             feedback_dict: {
                 type: 'thumb',
                 score: rating,
@@ -121,17 +123,21 @@ function Feedback ( {query_id, response, callback} ) {
     )
 }
 
-function UserMessage( {query_id, title, texts } ) {
+function UserMessage( {chat_id, turn_idx, title, texts } ) {
+    const { data: session } = useSession()
+    const userIcon = session ? <Avatar size='small' src={<img src={session.user.image} alt="avatar" />} /> :
+                               <Avatar size='small' style={{ backgroundColor: '#87d068' }} icon={<UserOutlined /> }/>;
+    const userTitle = session ? session.user.name ?? session.user.email : title;
     return (
         <Card bordered={false} style={{ padding: '0', background: '#CFEDCF'}}>
         <Flex gap='small'>
-            <div><Avatar size="small" style={{ backgroundColor: '#87d068' }} icon={<UserOutlined /> }/></div>
+            <div>{userIcon}</div>
             <div style={{width: '100%', fontWeight: 300, fontSize: ''}}>
             <Flex vertical >
-                <Title level={5} style={{margin: 0}}>{title}</Title>
+                <Title level={5} style={{margin: 0}}>{userTitle}</Title>
                 {...texts.map((text, index) => {
-                    const keyBody = query_id+'_'+index;
-                    return (<Paragraph>
+                    const keyBody = chat_id+'_'+turn_idx+'_'+index;
+                    return (<Paragraph style={{marginBottom: '0.5em'}}>
                         <Text key={keyBody} style={{fontSize: 'medium'}}>{text}</Text>
                     </Paragraph>)
                 })}
@@ -146,7 +152,7 @@ UserMessage.defaultProps = {
     title: 'You'
 };
 
-function AssistantMessage( { title, children, response, query_id, spinning, onFeedback} ) {
+function AssistantMessage( { title, children, texts, chat_id, turn_idx, onFeedback} ) {
     return (
         <Card bordered={false} style={{ padding: '0', background: '#FFFFFF'}}>
         <Flex gap='small'>
@@ -154,13 +160,11 @@ function AssistantMessage( { title, children, response, query_id, spinning, onFe
             <div style={{width: '100%'}}>
                 <Title level={5} style={{margin: 0}}>{title}</Title>
                 <div style={{padding: '5px 0'}} >
-                    <Markdown>{response}</Markdown>
-                    {/* <Spin spinning={spinning} >
-                    {spinning ? <Skeleton active /> : ''}
-                    </Spin> */}
+                    <Markdown>{texts}</Markdown>
                     <Feedback
-                        query_id={ query_id }
-                        response={ response }
+                        chat_id={ chat_id }
+                        turn_idx={ turn_idx }
+                        response={ texts }
                         callback={ onFeedback }/>
                 </div>
                 {children}
@@ -171,8 +175,7 @@ function AssistantMessage( { title, children, response, query_id, spinning, onFe
 }
 
 AssistantMessage.defaultProps = {
-    title: 'LLM',
-    spinning: false
+    title: 'LLM'
 };
 
 export default function ChatMessage( props ) {

@@ -46,7 +46,8 @@ function frontend_service_ops() {
     cd $SHELL_FOLDER/frontend
     case $1 in
     dev)
-        npm install
+        # npm install
+        yarn
         PORT=$FRONTEND_PORT npm run dev
         ;;
     *)

@@ -43,3 +43,9 @@ if __name__ == '__main__':
     
     with open(os.path.join(cache_dir, 'FRONTEND_PORT'), 'w') as f:
         f.write(str(api_config.ui['port']))
+
+    # next-auth oauth env
+    with open(os.path.join(main_dir, 'frontend', '.env.local'), 'w') as f:
+        for k, v in frontend_config['env'].items():
+            f.write(f'{k}={v}\n')
+        

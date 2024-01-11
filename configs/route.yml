@@ -1,3 +1,6 @@
+user_profile: /user/profile
+startup_chat: /chat/startup
+get_chat_info: /chat/info
 stream_chat: /chat/stream
 feedback: /feedback
 export_history: /export_history

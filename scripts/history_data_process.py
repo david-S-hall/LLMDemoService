@@ -20,11 +20,9 @@ parser.add_argument('--verbose', action='store_true', default=False)
 args = parser.parse_args()
 
 mongotool = MongoDBPool()
-client = pymongo.MongoClient(host=mongo_config.host, port=mongo_config.port)
-db = client[mongo_config.database]
 
 if args.operation == 'delete':
-    for collection_name in ['generation', 'feedback']:
+    for collection_name in ['generation', 'user', 'feedback', 'chat']:
         mongotool.drop_collection(collection_name)
         print(f'Delete Collection {collection_name}.')   
 
@@ -40,7 +38,7 @@ elif args.operation == 'export':
         fout = open(os.path.join(args.output_dir, f'{args.output_name}_0.jsonl'), 'w')
         step = args.split_size
     
-    results = mongotool.export_feedback(collection='generation')
+    results = mongotool.export_chat()
     
     for i, generation in enumerate(results):
 
@@ -51,5 +49,3 @@ elif args.operation == 'export':
         if i % step == step - 1:
             fout.close()
             fout = open(os.path.join(args.output_dir, f'{args.output_name}_{i//step+1}.jsonl'), 'w')
-
-client.close()

@@ -1,7 +1,7 @@
 import json
 from typing import List
 from pydantic import BaseModel, Field, field_validator
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import ServerSentEvent, EventSourceResponse
 
@@ -10,10 +10,12 @@ from backend.mongodb import MongoDBPool
 from arguments import api_config, mongo_config
 
 from processing_interface.stream_chat import generate_stream_response
+from processing_interface.summary import generate_summary
 
 
 # initialize
 mongotool = MongoDBPool()
+llm = LLMAPI()
 
 app = FastAPI(
     title="View layer service API for UI",
@@ -51,15 +53,18 @@ def get_health():
     """
     return dict(msg='OK')
 
+#########################################################
+###################### Feedback #########################
+#########################################################
 
 class FeedbackDict(BaseModel):
-    response_index: int = Field(0)
     type: str = Field('thumb')
     score: int = Field(None)
     comment: str = Field('')
 
 class Feedback(BaseModel):
-    query_id: str = Field(..., description='The _id field of generation in MongoDB')
+    chat_id: str = Field(..., description='The _id field of chat session in MongoDB')
+    turn_idx: int = Field(0, description='The response turn index in chat history')
     feedback_dict: dict = Field(..., description='The main body of the feedback')
     
     @field_validator('feedback_dict', mode='before')
@@ -70,51 +75,123 @@ class Feedback(BaseModel):
 @app.post("/feedback")
 async def upload_feedback(args: Feedback):
     try:
-        mongotool.feedback(query_id=args.query_id, feedback_dict=args.feedback_dict)
+        feedback = mongotool.build(args.dict(), collection='feedback')
+        chat = mongotool.get(args.chat_id, collection='chat')
+        chat['feedback_ids'].append(feedback['_id'])
+        mongotool.update(args.chat_id, chat, collection='chat')
         return {'status': 200}
     except Exception as e:
         print(e)
         return {'status': 500}
 
-@app.get("/export_history")
-async def export_history():
-    results = mongotool.export_feedback(collection='generation')
-    return json.dumps(results)
+#########################################################
+#################### User Profile #######################
+#########################################################
+
+@app.get('/user/profile')
+async def get_user_profile(user_id: str = Query('', description='The user id.'),
+                           action: str = Query('check')):
+    user_profile = mongotool.get(None, {'user_id': user_id}, 'user') if user_id != '' else None
+
+    if user_profile is None and action == 'fetch':
+        user_profile = mongotool.build({'user_id': user_id, 'chat_list': []}, 'user')
+
+    if user_profile is None:
+        user_profile = {'status': 0}
+    else:
+        user_profile['status'] = 1
+        user_profile['chat_list'] = user_profile['chat_list'][-1:-11:-1]
+        del user_profile['_id']
+
+    return user_profile
+
+#########################################################
+##################### Chat Session ######################
+#########################################################
+
+@app.get("/chat/startup")
+async def start_new_chat(user_id: str = Query('', description='The user id.')):
+    chat = mongotool.build({
+        'user_id': user_id,
+        'task': 'chat',
+        'llm_history': [],
+        'history': [],
+        'feedback_ids': []
+    }, collection='chat')
+    
+    payback = {'chat_id': str(chat['_id']), 'summary': "New Chat"}
+    user_profile = mongotool.get(None, {'user_id': user_id}, 'user') if user_id != '' else None
+    if user_profile is not None:
+        user_profile['chat_list'].append(payback)
+        mongotool.update(user_profile['_id'], user_profile, 'user')
+    
+    return payback
+
+@app.get("/chat/info")
+async def get_chat_info(chat_id: str = Query('', description='The chat _id'),
+                        user_id: str = Query('', description='The user _id')):
+    try:
+        chat = mongotool.get(chat_id, {'user_id': user_id}, collection='chat')
+        if chat is not None:
+            history = []
+            for i, turn in enumerate(chat['history']):
+                history.append({'role': 'user', 'turn_idx': i, 'texts': turn['query'].split('\n')})
+                history.append({'role': 'assistant', 'turn_idx': i, 'texts': turn['response']})
+            return {'status': 1, 'chat_id': chat_id, 'history': history}
+        else:
+            return {'status': -1}
+    except Exception as e:
+        print(e)
+        return {'status': -1}
 
 class Query(BaseModel):
-    previous_qid: str = Field('', description='The last query id.')
-    query: str = Field(..., description='The chat query')
+    chat_id: str = Field(None, description='The mongodb id of chat session.')
+    query: str = Field(..., description='The chat query.')
 
 @app.post("/chat/stream")
 async def stream_chat(args: Query, req: Request):    
-    llm = LLMAPI()
-    history = mongotool.get(args.previous_qid)['history'] if args.previous_qid != "" else []
-    uploaded = mongotool.build_geneartion({
-        'task': 'chat',
-        'query': args.query,
-    })
-    query_id = uploaded['_id']
+    chat = mongotool.get(args.chat_id, collection='chat')
+    chat_id = args.chat_id
+    user_id = str(chat['user_id'])
 
     async def event_generator(request: Request):
-        result = ''
         for result in generate_stream_response(
-            llm=llm, query=args.query, history=history
+            llm=llm, query=args.query, history=chat['llm_history']
         ):
             if await request.is_disconnected():  
                 print("连接已中断")  
                 break
-
-            result['query_id'] = str(query_id)
             
             yield {
                 "event": "stream_chat",
                 "retry": 15000,
-                "data": json.dumps(result)
+                "data": json.dumps({
+                    'texts': result['response'],
+                })
             }
 
+        # after process
+        if user_id != '' and len(chat['history']) == 0:
+            summary = generate_summary(llm, args.query, result['response'])
+            user_profile = mongotool.get(None, {'user_id': user_id}, 'user')
+            clist = user_profile['chat_list']
+
+            for i in range(len(clist)-1, -1, -1):
+                if str(clist[i]['chat_id']) == chat_id:
+                    clist[i]['summary'] = summary
+                    break
+            mongotool.update(user_profile['_id'], user_profile, 'user')
+        
         yield {"event": "stream_chat", "retry": 0, "data": '[DONE]'}
-        uploaded.update(result)
-        mongotool.update(query_id, uploaded)
+            
+        chat['llm_history'] = result['history']
+        chat['history'].append({
+            'query': args.query,
+            'prompt': result['prompt'],
+            'response': result['response']
+        })
+
+        mongotool.update(chat_id, chat, collection='chat')
 
     return EventSourceResponse(event_generator(req))
 
