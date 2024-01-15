@@ -8,9 +8,9 @@ export default function ScrollPane ({ children, scrollList, parentRef }) {
     const [isBackTopVis, setIsBackTopVis] = useState(false);
     const bottomRef = useRef(null);
 
-    const scrollToBottom = () => {
+    const scrollToBottom = (smooth) => {
         if (bottomRef.current) {
-            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+            bottomRef.current?.scrollIntoView(smooth ? { behavior: 'smooth' } : {});
         }
     }
     const setBackVisPosition = () => {
@@ -59,7 +59,7 @@ export default function ScrollPane ({ children, scrollList, parentRef }) {
                 (isBackTopVis) ?
                 <FloatButton 
                     icon={ <ArrowDownOutlined/> }
-                    onClick={ scrollToBottom }
+                    onClick={ () => {scrollToBottom(true)} }
                     style={{ top: distY, left: '0', transform: 'translateX('+distX+'px)' }}
                 /> 
                 : ''

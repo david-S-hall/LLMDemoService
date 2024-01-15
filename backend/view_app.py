@@ -94,7 +94,6 @@ async def get_user_profile(
     action: str = Query('check', description='The action for processing user profile')):
 
     user_profile = mongotool.get(None, {'user_id': user_id}, 'user') if user_id != '' else None
-
     if user_profile is None and action == 'fetch':
         user_profile = mongotool.build({'user_id': user_id, 'chat_list': []}, 'user')
 
@@ -192,8 +191,7 @@ async def stream_chat(args: Query, req: Request, res: Response):
             if await request.is_disconnected():  
                 print("连接已中断")  
                 break
-            
-            
+
             yield {
                 "event": "stream_chat",
                 "retry": 15000,
@@ -203,8 +201,18 @@ async def stream_chat(args: Query, req: Request, res: Response):
             }
             last_msg = result['response']
 
+        chat['llm_history'] = result['history']
+        chat['history'].append({
+            'query': args.query,
+            'prompt': result['prompt'],
+            'response': result['response']
+        })
+        mongotool.update(chat_id, chat, collection='chat')
+
+        yield {"event": "stream_chat", "retry": 0, "data": '[FINISH]'}
+
         # after process
-        if user_id != '' and len(chat['history']) == 0:
+        if user_id != '' and len(chat['history']) == 1:
             summary = generate_summary(llm, args.query, result['response'])
             user_profile = mongotool.get(None, {'user_id': user_id}, 'user')
             clist = user_profile['chat_list']
@@ -216,15 +224,6 @@ async def stream_chat(args: Query, req: Request, res: Response):
             mongotool.update(user_profile['_id'], user_profile, 'user')
         
         yield {"event": "stream_chat", "retry": 0, "data": '[DONE]'}
-            
-        chat['llm_history'] = result['history']
-        chat['history'].append({
-            'query': args.query,
-            'prompt': result['prompt'],
-            'response': result['response']
-        })
-
-        mongotool.update(chat_id, chat, collection='chat')
 
     return EventSourceResponse(event_generator(req))
 

@@ -36,7 +36,7 @@ class QwenService(LLM):
                      generation_config=None,
                      **kwargs) -> str:
         response = ''
-        history.append((query, response))
+        history.append([query, response])
         for response in self.model.chat_stream(self.tokenizer, query, history, system,
                                                stop_words_ids, logits_processor, generation_config,
                                                **kwargs):

@@ -19,7 +19,7 @@ export async function getServerSideProps( ctx ) {
   const chat_id = ctx.params.chat_id;
   const user_id = session ? session.user.id : '' ;
 
-  const chatInfo = await fetch(APIRoutes.get_chat_info+'?user_id='+user_id+'&chat_id='+chat_id)
+  let chatInfo = await fetch(APIRoutes.get_chat_info+'?user_id='+user_id+'&chat_id='+chat_id)
   .then((response) => response.json())
   .then((data) => data)
 
@@ -68,14 +68,16 @@ export default function Chat ({ chatInfo, session }) {
     });
 
     source.addEventListener("stream_chat", (e) => {
-      if (e.data != "[DONE]") {
+      if (e.data == "[DONE]") {
+        chatState.setLoading(false);
+        updateChat();
+        source.close();
+      } else if (e.data == '[FINISH]') {
+        chatState.setUserInput('');
+        llmMsg.loading = false
+      } else {
         const data = JSON.parse(e.data);
         llmMsg.texts = llmMsg.texts + data.texts;
-      } else {
-        llmMsg.loading = false;
-        chatState.setUserInput('');
-        chatState.setLoading(false);
-        source.close();
       }
       setTimeout(() => {chatState.setChatHistory([...curHistory, userMsg, llmMsg]);}, 100)
     });
@@ -122,8 +124,6 @@ export default function Chat ({ chatInfo, session }) {
   useEffect(() => {
     if ( chatState.loading ) {
       getChatResponse();
-    } else{
-      updateChat();
     }
   }, [chatState.loading])
 

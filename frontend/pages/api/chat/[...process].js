@@ -39,7 +39,6 @@ export default async function handler (req, res) {
             })
     
             const reader = response.body.pipeThrough(new TextDecoderStream()).getReader()
-            console.log(response.headers);
             while (true) {
                 const {value, done} = await reader.read();
                 if (done) {

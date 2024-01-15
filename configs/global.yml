@@ -33,7 +33,7 @@ llm:
     llm_name_or_path: THUDM/chatglm3-6b
     multi_gpu_model_cache_dir: ./cache/temp_model_dir
     num_gpus: 1
-    fp16: true
+    fp16: false # true
     quantization_bit: null
     ptuning_checkpoint: null
     pre_seq_len: null

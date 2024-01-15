@@ -9,7 +9,7 @@ import { useChatState } from 'lib/chatstate';
 const { Text } = Typography;
 
 
-function UserSetting(){
+function UserSetting({ buttonHeight }){
     const { data: session, update: updateSession } = useSession();
     const chatState = useChatState();
     const intlState = useIntlState();
@@ -17,7 +17,7 @@ function UserSetting(){
 
     return (
         <>
-            <Flex gap='small' onClick={() => {setIsModalOpen(true)}}>
+            <Flex gap='small' align='center' onClick={() => {setIsModalOpen(true)}} style={ buttonHeight ? { height: buttonHeight } : {}}>
                 <SettingOutlined />{intlState.intl.formatMessage({id: 'setting'})}
             </Flex>
             <ConfigProvider theme={chatState.getTheme()}>
@@ -86,15 +86,16 @@ export default function UserPane() {
         signOut();
     }
 
+    const buttonHeight = '2.2em';
     const items = [
         {
             key: '1',
-            label: <UserSetting />,
+            label: <UserSetting buttonHeight={buttonHeight} />,
         },
         {
             key: '2',
             label: 
-            <Flex gap='small' onClick={handleSignout}>
+            <Flex gap='small' align='center' onClick={handleSignout} style={{ height: buttonHeight }}>
                 <LogoutOutlined />{intlState.intl.formatMessage({id: 'auth.logout'})}
             </Flex>,
         }

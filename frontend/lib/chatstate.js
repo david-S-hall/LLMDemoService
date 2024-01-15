@@ -56,6 +56,9 @@ const themeDict = {
                 fontSize: '.9rem', //16
                 activeBorderColor: '#ffffff',
                 hoverBorderColor: '#555555',
+            },
+            FloatButton: {
+                colorBgElevated: 'rgba(11, 11, 25, 0.2)',
             }
         }
     }
@@ -67,7 +70,7 @@ export const ChatStateProvider = ({ children }) => {
     const { data: session } = useSession();
 
     const [chatHistory, setChatHistory] = useState([]);
-    const [chatList, setChatList] = useState([]);
+    const [chatList, setChatList] = useState(session ? session.user?.chat_list : []);
     const [curChatID, setCurChatID] = useState('');
     const [loading, setLoading] = useState(false);
     const [userInput, setUserInput] = useState('');

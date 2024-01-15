@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { EllipsisOutlined, DeleteOutlined, HighlightOutlined } from '@ant-design/icons';
 import { ConfigProvider, theme } from 'antd';
@@ -154,7 +154,6 @@ const ChatItem = ({ chat_id, chat_name, chat_index }) => {
  
 export default function ChatList() {
     const chatState = useChatState();
-    
     const items = [
         ...chatState.chatList.map((single_chat, index) => {
             return {
@@ -168,10 +167,10 @@ export default function ChatList() {
     return (
         <Menu mode="inline"
               theme="dark"
-              key='test'
+              key={Date.now()}
+              inlineIndent={10}
               className={ styles.chatList }
               items={ items }
-              inlineIndent={10}
               selectedKeys={ chatState.curChatID === '' ? [] : [chatState.curChatID] } />
     )
 }
