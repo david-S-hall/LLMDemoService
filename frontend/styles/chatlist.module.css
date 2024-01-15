@@ -1,0 +1,51 @@
+.chatList > li.chatListItem {
+    margin-inline: 0;
+    padding-inline: 10px;
+}
+
+div.chatName {
+    inset-inline: 0;
+}
+
+.chatName > textarea {
+    white-space: nowrap;
+    overflow: hidden;
+    resize: none;
+}
+
+.chatListItem-appear {
+    opacity: 0;
+    transform: scale(0.9);
+}
+.chatListItem-appear-active {
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 500ms, transform 500ms;
+}
+.chatListItem-appear-done {
+    opacity: 1;
+}
+
+.chatListItem-enter {
+    opacity: 0;
+    transform: scale(0.9);
+}
+.chatListItem-enter-active {
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 500ms, transform 500ms;
+}
+.chatListItem-enter-done {
+    opacity: 1;
+}
+.chatListItem-exit {
+    opacity: 1;
+}
+.chatListItem-exit-active {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 500ms, transform 500ms;
+}
+.chatListItem-exit-done {
+    opacity: 0;
+}

@@ -3,36 +3,33 @@ import { useEffect } from 'react';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from 'pages/api/auth/[...nextauth]';
 
-import { useChatState } from 'components/chatstate';
-import { getAPIRoutes } from 'lib/config';
+import { useChatState } from 'lib/chatstate';
 
 
 export async function getServerSideProps ( ctx ) {
-  const APIRoutes = getAPIRoutes();
   const session = await getServerSession(ctx.req, ctx.res, authOptions)
   return {
-    props: { APIRoutes, session, }
+    props: { session }
   }
 }
 
-export default function Home({ APIRoutes, session }) {
+export default function Home({ session }) {
   const chatState = useChatState();
   const router = useRouter();
-  const user_id = session ? session.user.id : '';
 
   const startupChat = async () => {
-    const response = await fetch(APIRoutes.startup_chat+'?user_id='+user_id);
+    const response = await fetch('/api/chat/create_chat');
     const data = await response.json();
     chatState.setChatList([data, ...chatState.chatList])
     router.push('/chat/'+data.chat_id);
   }
 
   useEffect(() => {
-    chatState.setCurChatID('');
-    chatState.setChatList(session.user.chat_list);
-    chatState.setUserInput('');
-    chatState.setLoading(false);
     chatState.setChatHistory([]);
+    chatState.setChatList(session.user.chat_list);
+    chatState.setCurChatID('');
+    chatState.setLoading(false);
+    chatState.setUserInput('');
   }, [])
 
   useEffect(() => {

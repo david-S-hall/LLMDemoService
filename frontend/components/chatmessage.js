@@ -14,17 +14,19 @@ import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus, coyWithoutShadows, darcula } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { useIntlState } from 'config/locale';
 
 const { Text, Title, Paragraph } = Typography;
 const { TextArea } = Input;
 
-import styles from '../styles/markdown.module.css'
+import styles from 'styles/markdown.module.css'
 
 let codeTheme = vscDarkPlus
 
 codeTheme['pre[class*="language-"]'].margin = '0 0 .5em 0';
 codeTheme['pre[class*="language-"]'].borderRadius = '0 0 .375rem .375rem'
 codeTheme['pre[class*="language-"]'].fontSize = '0.7rem'
+codeTheme['code[class*="language-"]'].fontSize = '0.9rem'
 
 function Markdown ( {children} ) {
     return (
@@ -38,7 +40,6 @@ function Markdown ( {children} ) {
                             <Text className={styles.codeTitleText}>Language: {match[1].toLocaleUpperCase()}</Text>
                         </div>
                         <SyntaxHighlighter
-                            // showLineNumbers={true}
                             wrapLongLines={true}
                             {...props}
                             style={codeTheme}
@@ -62,6 +63,7 @@ function Markdown ( {children} ) {
 }
 
 function Feedback ( {chat_id, turn_idx, response, callback} ) {
+    const intlState = useIntlState();
     const [rating, setRating] = useState(-1);
     const [reason, setReason] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,11 +112,11 @@ function Feedback ( {chat_id, turn_idx, response, callback} ) {
             <Button type='text' size='small' icon={ copyIcon } onClick={copyResponse} />
         </Flex>
         <Modal
-            title="评价详细信息" okText='提交' cancelText='取消'
+            title={intlState.intl.formatMessage({id: 'chat.feedback.title'})} //okText='提交' cancelText='取消'
             open={isModalOpen}
             onOk={ratingOk}
             onCancel={ratingCancel}>
-            <p>请在下面的文本框中写下{rating === 1 ? '认同' : '不认同'}的具体原因</p>
+            <p>{intlState.intl.formatMessage({id: 'chat.feedback.description'})}</p>
             <TextArea 
                 value={ reason }
                 onChange={ (e) => setReason(e.target.value) }/>
@@ -125,20 +127,21 @@ function Feedback ( {chat_id, turn_idx, response, callback} ) {
 
 function UserMessage( {chat_id, turn_idx, title, texts } ) {
     const { data: session } = useSession()
+    const themeTokens = theme.useToken().token;
     const userIcon = session ? <Avatar size='small' src={<img src={session.user.image} alt="avatar" />} /> :
                                <Avatar size='small' style={{ backgroundColor: '#87d068' }} icon={<UserOutlined /> }/>;
     const userTitle = session ? session.user.name ?? session.user.email : title;
     return (
-        <Card bordered={false} style={{ padding: '0', background: '#CFEDCF'}}>
+        <Card bordered={false} style={{ padding: '0', background: themeTokens.colorBgUserMsg}}>
         <Flex gap='small'>
             <div>{userIcon}</div>
-            <div style={{width: '100%', fontWeight: 300, fontSize: ''}}>
-            <Flex vertical >
-                <Title level={5} style={{margin: 0}}>{userTitle}</Title>
+            <div style={{ width: '100%', fontWeight: 'normal' }}>
+            <Flex vertical>
+                <Title level={5} style={{margin: '0 0 10px 0' }}>{userTitle}</Title>
                 {...texts.map((text, index) => {
                     const keyBody = chat_id+'_'+turn_idx+'_'+index;
                     return (<Paragraph style={{marginBottom: '0.5em'}}>
-                        <Text key={keyBody} style={{fontSize: 'medium'}}>{text}</Text>
+                        <Text className={styles.userContent} key={keyBody} >{text}</Text>
                     </Paragraph>)
                 })}
             </Flex>
@@ -152,20 +155,22 @@ UserMessage.defaultProps = {
     title: 'You'
 };
 
-function AssistantMessage( { title, children, texts, chat_id, turn_idx, onFeedback} ) {
+function AssistantMessage( { title, children, texts, chat_id, turn_idx, onFeedback, loading } ) {
+    const themeTokens = theme.useToken().token;
     return (
-        <Card bordered={false} style={{ padding: '0', background: '#FFFFFF'}}>
+        <Card bordered={false} style={{ padding: '0', background: themeTokens.colorBgLLMMsg}}>
         <Flex gap='small'>
             <div><Avatar size="small" style={{ backgroundColor: '#1677ff' }} icon={<MessageTwoTone />}/></div>
             <div style={{width: '100%'}}>
                 <Title level={5} style={{margin: 0}}>{title}</Title>
                 <div style={{padding: '5px 0'}} >
                     <Markdown>{texts}</Markdown>
+                    { !loading ? 
                     <Feedback
-                        chat_id={ chat_id }
-                        turn_idx={ turn_idx }
-                        response={ texts }
-                        callback={ onFeedback }/>
+                    chat_id={ chat_id }
+                    turn_idx={ turn_idx }
+                    response={ texts }
+                    callback={ onFeedback }/> : ""}
                 </div>
                 {children}
             </div>

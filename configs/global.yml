@@ -29,7 +29,6 @@ frontend:
 
 llm:
   model_1:
-    # 选择模型类型的关键字段，目前可选项为['ChatGLM', 'Qwen']
     type: ChatGLM
     llm_name_or_path: THUDM/chatglm3-6b
     multi_gpu_model_cache_dir: ./cache/temp_model_dir
@@ -41,7 +40,7 @@ llm:
     prefix_projection: false
   # model_2:
   #   type: Qwen
-  #   llm_name_or_path: Qwen/Qwen-7B-Chat  # 本地模型文件 or huggingface远程仓库
+  #   llm_name_or_path: Qwen/Qwen-7B-Chat
   #   device_map: auto
   #   fp16: false
   #   bf16: false

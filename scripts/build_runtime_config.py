@@ -38,7 +38,7 @@ if __name__ == '__main__':
             if isinstance(v, str):
                 routes[k] = urljoin(base_url, v)
         routes['url'] = base_url
-        with open(os.path.join(main_dir, 'frontend/configs', 'route.json'), 'w') as fout:
+        with open(os.path.join(main_dir, 'frontend/config', 'route.json'), 'w') as fout:
             fout.write(json.dumps(routes))
     
     with open(os.path.join(cache_dir, 'FRONTEND_PORT'), 'w') as f:
@@ -47,5 +47,5 @@ if __name__ == '__main__':
     # next-auth oauth env
     with open(os.path.join(main_dir, 'frontend', '.env.local'), 'w') as f:
         for k, v in frontend_config['env'].items():
-            f.write(f'{k}={v}\n')
+            f.write(f'{k}="{v}"\n')
         

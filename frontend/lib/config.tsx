@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs";
 
-const configDirectory = path.join(process.cwd(), 'configs')
+const configDirectory = path.join(process.cwd(), 'config')
 
 
 export function getAPIRoutes () {

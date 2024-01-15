@@ -5,10 +5,11 @@ import { authOptions } from 'pages/api/auth/[...nextauth]';
 
 import ScrollPane from 'components/scrollpane';
 import ChatMessage from 'components/chatmessage';
-import { useChatState } from 'components/chatstate';
+import { useChatState } from 'lib/chatstate';
 
 import { SSE } from "lib/sse";
 import { getAPIRoutes } from 'lib/config';
+import { useIntlState } from 'config/locale';
 
 
 export async function getServerSideProps( ctx ) {
@@ -18,28 +19,25 @@ export async function getServerSideProps( ctx ) {
   const chat_id = ctx.params.chat_id;
   const user_id = session ? session.user.id : '' ;
 
-  const chatInfo = await fetch(APIRoutes.get_chat_info+'?user_id='+user_id+'&chat_id='+chat_id, {
-    method: 'GET'
-  })
+  const chatInfo = await fetch(APIRoutes.get_chat_info+'?user_id='+user_id+'&chat_id='+chat_id)
   .then((response) => response.json())
   .then((data) => data)
 
   return {
     props: {
       session,
-      chatInfo,
-      APIRoutes
+      chatInfo
     },
   };
 }
 
-export default function Chat ({ APIRoutes, chatInfo, session }) {
+export default function Chat ({ chatInfo, session }) {
   const router = useRouter();
   const chatState = useChatState();
+  const intlState = useIntlState();
   const { chat_id } = router.query;
-  const user_id = session ? session.user.id : '';
 
-  let getChatResponse = async () => {
+  const getChatResponse = async () => {
     const curHistory = chatState.chatHistory;
     const query = chatState.userInput;
 
@@ -59,31 +57,34 @@ export default function Chat ({ APIRoutes, chatInfo, session }) {
       chat_id: chat_id,
       turn_idx: curHistory.length,
       texts: '',
+      loading: true,
     }
     chatState.setChatHistory([...curHistory, userMsg, llmMsg]);
 
-    let source = new SSE(APIRoutes.stream_chat, {
+    let source = new SSE(`/api/chat/${chat_id}?action=stream`, {
       method: 'POST',
-      headers: { accept: 'application/json', 'Content-Type': 'application/json' },
-      payload: JSON.stringify({ "query": query, "chat_id": chat_id })
+      headers: { accept: 'text/event-stream', 'Content-Type': 'application/json' },
+      payload: JSON.stringify({ "query": query })
     });
 
     source.addEventListener("stream_chat", (e) => {
       if (e.data != "[DONE]") {
-        let data = JSON.parse(e.data);
-        llmMsg.texts = data.texts;
+        const data = JSON.parse(e.data);
+        llmMsg.texts = llmMsg.texts + data.texts;
       } else {
+        llmMsg.loading = false;
         chatState.setUserInput('');
         chatState.setLoading(false);
         source.close();
       }
-      chatState.setChatHistory([...curHistory, userMsg, llmMsg]);
+      setTimeout(() => {chatState.setChatHistory([...curHistory, userMsg, llmMsg]);}, 100)
     });
+    
     source.stream();
   }
 
   const uploadFeedback = async ( payload ) => {
-    const response = await fetch(APIRoutes.feedback,
+    const response = await fetch(`/api/chat/${chat_id}?action=feedback`,
       {
         method: 'POST',
         headers: { accept: 'application/json', 'Content-Type': 'application/json' },
@@ -92,14 +93,14 @@ export default function Chat ({ APIRoutes, chatInfo, session }) {
     );
     const data = await response.json();
     if (data.status === 200) {
-      chatState.notiApi.open({type: 'success', content: "反馈成功"})
+      chatState.notiApi.open({type: 'success', content: intlState.intl.formatMessage({id: 'chat.feedback.successMsg'})})
     } else {
-      chatState.notiApi.open({type: 'error', content: "反馈失败"})
+      chatState.notiApi.open({type: 'error', content: intlState.intl.formatMessage({id: 'chat.feedback.failedMsg'})})
     }
   }
 
   const updateChat = async () => {
-    const profile = await fetch(APIRoutes.user_profile+'?user_id='+user_id+'&action=fetch')
+    const profile = await fetch('/api/user/profile')
                 .then((response) => response.json())
                 .then((data) => data)
     chatState.setChatList(profile.chat_list)
@@ -111,7 +112,7 @@ export default function Chat ({ APIRoutes, chatInfo, session }) {
 
   useEffect(() => {
     if (chatInfo.status === -1) {
-      chatState.notiApi.open({ type: 'error', content: "Invalid Chat "+chat_id });
+      chatState.notiApi.open({ type: 'error', content: intlState.intl.formatMessage({id: 'chat.feedback.successMsg'})}+`: ${chat_id}` );
       router.push('/');
     } else {
       chatState.setChatHistory(chatInfo.history);

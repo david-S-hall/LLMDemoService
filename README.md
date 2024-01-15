@@ -38,7 +38,7 @@
 
 ### OAuth
 
-**[Mandatory]** Create OAuth Application of Github & Google first and fill the section `frontend-env` in `configs/global.yml` as follow:
+**[Mandatory]** Create OAuth Application of [Github](https://docs.github.com/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps) & [Google](https://developers.google.com/identity/sign-in/web/sign-in) first and fill the section `frontend-env` in `configs/global.yml` as follow:
 
 ```yaml
 frontend:
@@ -54,6 +54,20 @@ frontend:
 ```
 
 ### LLM service
+
+First configure the LLM model for local deployment by the section `llm` in `configs/global.yml` as follow:
+
+```yaml
+llm:
+  # The model_name defined by yourself for llm.chat(query, select_model=model_name)
+  # Multiple subsection in `llm` section means deploying multiple models
+  model_1: 
+    # The llm type support in backend/llm, including ['ChatGLM', 'Qwen']
+    type: ChatGLM
+    # local llm model path or huggingface remote repo name
+    llm_name_or_path: THUDM/chatglm3-6b 
+    ...
+```
 
 Configure the section `api-model` in `configs/global.yml` as follow:
 

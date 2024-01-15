@@ -6,7 +6,7 @@ import { Layout, Col, Row, Flex } from 'antd';
 
 import SideBar from 'components/sidebar';
 import ChatInput from 'components/chatinput';
-import { useChatState } from 'components/chatstate';
+import { useChatState } from 'lib/chatstate';
 
 const { Header, Content, Footer } = Layout;
 const { CollapseButton } = SideBar;
@@ -31,24 +31,8 @@ export default function ChatLayout({ children }) {
       </Head>
 
       {/* 侧边栏 */}
-      <ConfigProvider
-        theme={{
-          algorithm: theme.darkAlgorithm,
-          components: {
-            Slider: {
-              railBg: '#80808f',
-              railHoverBg: '#bfbfcf',
-              trackBg: '#5b8bbf',
-              trackHoverBg: '#5babff',
-              handleColor: '#80808f',
-              handleActiveColor: '#4b9bff',
-              colorBgElevated: '#bfbfcf'
-            },
-            Menu: {
-              darkItemSelectedBg:	'#36444f'
-            }
-          }
-      }}>
+      <ConfigProvider theme={{algorithm: theme.darkAlgorithm }}>
+      {/* <ConfigProvider theme={chatState.getTheme('dark')}> */}
       <SideBar
         width={sidebarWidth}
         collapsed={collapsed}
@@ -57,9 +41,7 @@ export default function ChatLayout({ children }) {
       </ConfigProvider>
 
       {/* 主体窗口 */}
-      <ConfigProvider theme={{
-        algorithm: theme.defaultAlgorithm,
-      }}>
+      <ConfigProvider theme={chatState.getTheme()} >
       <Layout>
 
         {chatState.notiContextHolder}
@@ -70,7 +52,7 @@ export default function ChatLayout({ children }) {
           onClick={toggleCollapse}
           style={{ top: '45vh' }}/>
 
-        <Header style={{ background: '#ffffff', padding: '0 .5rem', height: '3rem', lineHeight: '3rem'}} >
+        <Header style={{ padding: '0 .5rem', height: '3rem', lineHeight: '3rem'}} >
           <div style={{fontSize: '1.3em', fontWeight: 'bold', verticalAlign: 'middle', margin: '0px 15px'}}>Chat</div>
         </Header>
 
@@ -80,7 +62,7 @@ export default function ChatLayout({ children }) {
             {/* 展示窗 */}
             <Row ref={chatState.containerRef} style={{ overflowY: 'auto', flex: '1 1 0%' }}>
               <Col xs={24} sm={24} md={24} lg={{span: lg_bag, push: lg_sep}} xl={{span: xl_bag, push: xl_sep}}>
-                  {children}
+                {children}
               </Col>
             </Row>
 

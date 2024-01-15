@@ -1,36 +1,72 @@
 import { useState } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { UserOutlined, SettingOutlined, LogoutOutlined } from '@ant-design/icons';
-import { ConfigProvider, theme } from 'antd';
-import { Flex, Button, Avatar, Dropdown, Typography, Modal } from 'antd';
+import { ConfigProvider, theme, Typography } from 'antd';
+import { Flex, Button, Avatar, Dropdown, Modal, Radio, Divider } from 'antd';
+import { useIntlState } from 'config/locale';
+import { useChatState } from 'lib/chatstate';
 
 const { Text } = Typography;
 
 
 function UserSetting(){
+    const { data: session, update: updateSession } = useSession();
+    const chatState = useChatState();
+    const intlState = useIntlState();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const showModal = () => {
-        setIsModalOpen(true);
-    };
-    const toggleModal = () => {
-        setIsModalOpen(!isModalOpen);
-    };
+
     return (
         <>
-            <Flex gap='small' onClick={showModal}>
-            <SettingOutlined />
-                设置
+            <Flex gap='small' onClick={() => {setIsModalOpen(true)}}>
+                <SettingOutlined />{intlState.intl.formatMessage({id: 'setting'})}
             </Flex>
-            <ConfigProvider theme={{
-                algorithm: theme.defaultAlgorithm,
-            }}>
-            <Modal title="设置"
+            <ConfigProvider theme={chatState.getTheme()}>
+            <Modal 
+                title={intlState.intl.formatMessage({id: 'setting'})}
                 footer=""
+                centered
                 open={isModalOpen}
-                onOk={() => toggleModal()} onCancel={() => toggleModal()}>
-                <p>Some contents...</p>
-                <p>Some contents...</p>
-                <p>Some contents...</p>
+                onCancel={() => setIsModalOpen(!isModalOpen)}
+                >
+            <Divider style={{ margin: '15px 0' }} />
+            <Flex vertical gap='middle'>
+            
+                {/* International */}
+                <Flex gap='large' align='center'>
+                    <Text style={{ width: '100px', fontSize: 16 }}>{intlState.intl.formatMessage({id: 'setting.UILanguage'})}</Text>
+                    <Radio.Group
+                        size='large'
+                        buttonStyle='solid'
+                        optionType='button'
+                        options={
+                            Object.entries(intlState.langInfo).map(([key, value]) => ({
+                                value: key,
+                                label: value
+                            }))
+                        }
+                        value={intlState.curLang}
+                        onChange={async (e) => {intlState.switchLang(e.target.value); await updateSession({ lang: e.target.value }); }}
+                    />
+                </Flex>
+
+                {/* UI Theme */}
+                <Flex gap='large' align='center'>
+                    <Text style={{ width: '100px', fontSize: 16 }}>{intlState.intl.formatMessage({id: 'setting.UITheme'})}</Text>
+                    <Radio.Group
+                        size='large'
+                        buttonStyle='solid'
+                        optionType='button'
+                        options={
+                            chatState.themeList.map((theme) => ({
+                                value: theme,
+                                label: intlState.intl.formatMessage({id: `setting.UITheme.${theme}`})
+                            }))
+                        }
+                        value={chatState.theme}
+                        onChange={async (e) => {chatState.switchTheme(e.target.value); await updateSession({ theme: e.target.value }); }}
+                    />
+                </Flex>
+            </Flex>
             </Modal>
             </ConfigProvider>
         </>
@@ -39,7 +75,7 @@ function UserSetting(){
 
 
 export default function UserPane() {
-
+    const intlState = useIntlState();
     const handleSignin = (e) => {
         e.preventDefault();
         signIn();
@@ -57,19 +93,24 @@ export default function UserPane() {
         },
         {
             key: '2',
-            label: <Flex gap='small' onClick={handleSignout}><LogoutOutlined />注销</Flex>,
+            label: 
+            <Flex gap='small' onClick={handleSignout}>
+                <LogoutOutlined />{intlState.intl.formatMessage({id: 'auth.logout'})}
+            </Flex>,
         }
     ];
+    const buttonConfig = {
+        type: 'text',
+        block: true,
+        size: 'large',
+        style: { textAlign: 'left', height: '2.5rem', padding: '5px' }
+    }
 
     const { data: session } = useSession();
     return session ?
     (
         <Dropdown menu={{ items }} trigger={['click']}>
-            <Button
-                type='text'
-                block
-                size='large'
-                style={{ textAlign: 'left', height: '100%', padding: '5px' }}>
+            <Button {...buttonConfig}>
                 <Flex gap='small' align='center'>
                     <Avatar size='middle' src={<img src={session.user.image} alt="avatar" />} />
                     <Text strong>{session.user.userId}{session.user.name ?? session.user.email}</Text>
@@ -78,14 +119,10 @@ export default function UserPane() {
         </Dropdown>
     ):
     (
-        <Button type='text'
-                block
-                size='large'
-                onClick={ handleSignin }
-                style={{ textAlign: 'left', height: '100%' }}>
+        <Button {...buttonConfig} onClick={ handleSignin } >
             <Flex gap='small' align='center'>
                 <Avatar size='middle' icon={<UserOutlined />} />
-                <Text strong>点击登录</Text>
+                <Text strong>{intlState.intl.formatMessage({id: 'auth.login'})}</Text>
             </Flex>
         </Button>
     );

@@ -1,1 +1,0 @@
-{"user_profile": "http://0.0.0.0:10081/user/profile", "startup_chat": "http://0.0.0.0:10081/chat/startup", "get_chat_info": "http://0.0.0.0:10081/chat/info", "stream_chat": "http://0.0.0.0:10081/chat/stream", "feedback": "http://0.0.0.0:10081/feedback", "export_history": "http://0.0.0.0:10081/export_history", "url": "http://0.0.0.0:10081"}

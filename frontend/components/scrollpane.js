@@ -30,7 +30,7 @@ export default function ScrollPane ({ children, scrollList, parentRef }) {
     useEffect(() => {
         const node = parentRef.current;
         if (node.scrollTop > (node.scrollHeight - node.clientHeight * 5)){
-            scrollToBottom();
+            setTimeout(() => { scrollToBottom() }, 100);
         }
     }, [scrollList]);
 

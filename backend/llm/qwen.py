@@ -25,7 +25,7 @@ class QwenService(LLM):
 
     @property
     def _llm_type(self) -> str:
-        return "Qwen-7B-Chat"
+        return "Qwen"
 
     def _stream_call(self,
                      query: str,
@@ -58,7 +58,12 @@ class QwenService(LLM):
 
         return response, history
     
-    def load_model(self, model_args=DEFAULT_CFG):
+    def load_model(self, model_args):
+        base_cfg = DEFAULT_CFG
+        for k, v in model_args.items():
+            setattr(base_cfg, k, v)
+        model_args = base_cfg
+        
         model_path = model_args.llm_name_or_path
         device_map = model_args.device_map
         # Note: The default behavior now has injection attack prevention off.

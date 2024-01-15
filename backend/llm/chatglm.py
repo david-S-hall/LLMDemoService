@@ -135,6 +135,11 @@ class ChatGLMService(LLM):
             )
     
     def _load_model(self, model_args):
+        base_cfg = DEFAULT_CFG
+        for k, v in model_args.items():
+            setattr(base_cfg, k, v)
+        model_args = base_cfg
+        
         config = AutoConfig.from_pretrained(model_args.llm_name_or_path, trust_remote_code=True)
         config.pre_seq_len = model_args.pre_seq_len
         config.prefix_projection = model_args.prefix_projection

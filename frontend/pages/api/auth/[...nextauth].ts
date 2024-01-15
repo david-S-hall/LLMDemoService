@@ -24,6 +24,13 @@ export const authOptions: NextAuthOptions = {
         signIn: '/auth/login',
     },
     callbacks: {
+        async jwt ({ token, trigger, session }) {
+            if (trigger === 'update') {
+                if (session?.lang) token.lang = session.lang;
+                if (session?.theme) token.theme = session.theme;
+            }
+            return token;
+        },
         async session({ session, token }) {
             if (session.user) {
                 const profile = await fetch(APIRoutes.user_profile+'?user_id='+token.sub+'&action=fetch')
@@ -32,7 +39,9 @@ export const authOptions: NextAuthOptions = {
                 session.user = {
                     ...session.user,
                     ...profile,
-                    id: token.sub
+                    id: token.sub,
+                    lang: token?.lang ? token.lang : null,
+                    theme: token?.theme ? token.theme : null,
                 }
             }
             return session;

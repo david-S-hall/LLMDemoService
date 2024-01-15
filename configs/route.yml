@@ -1,4 +1,5 @@
 user_profile: /user/profile
+user_chat_modify: /user/chat
 startup_chat: /chat/startup
 get_chat_info: /chat/info
 stream_chat: /chat/stream
