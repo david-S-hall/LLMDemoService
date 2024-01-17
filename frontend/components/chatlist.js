@@ -135,7 +135,7 @@ const ChatItem = ({ chat_id, chat_name, chat_index }) => {
                     editing: nameEditing,
                     triggerType: [],
                     enterIcon: null,
-                    maxLength: 20,
+                    maxLength: 30,
                     onChange: onRename,
                     onCancel: () => setNameEditing(false),
                     // onEnd: onRename,

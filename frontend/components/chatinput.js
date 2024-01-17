@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { UploadOutlined } from '@ant-design/icons';
 import { Flex, Button, Input, theme } from 'antd';
 import { useIntlState } from 'config/locale';
@@ -10,24 +11,34 @@ export default function ChatInput ({}) {
     const themeTokens = theme.useToken().token;
     const chatState = useChatState();
     const intlState = useIntlState();
+    const [isComposition, setIsComposition] = useState(false);
 
     const onSubmit = () => {
         chatState.setLoading(true)
     }
-    const onPressEnter = (event) => {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-            if (chatState.userInput.trim() !== ""){
+    const onClick = () => { onSubmit(); }
+    const onPressEnter = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (isComposition) {
+                setIsComposition(false);
+            } else if (chatState.userInput.trim() !== ""){
                 onSubmit();
             }
         }
     }
-    const onClick = () => { onSubmit(); }
+
+    const handleComposition = (e) => {
+        e.preventDefault();
+        if (e.type === 'compositionstart'){
+            setIsComposition(true)
+        } else if (e.type === 'compositionend') {
+            setIsComposition(false)
+        } 
+    }
 
     return (
         <div style={{
-                // padding: '.6rem',
-                // padding: '0 .8rem .8rem 0',
                 background: themeTokens.colorBgElevated,
                 border: '1px solid #d9d9e3',
                 borderRadius: '16px',
@@ -42,14 +53,17 @@ export default function ChatInput ({}) {
                 autoSize={{ maxRows: 20 }}
                 size='middle'
                 bordered={false}
-                style={{ padding: '.875rem' }}
+                style={{ padding: '.8rem' }}
                 disabled={ chatState.loading }
                 onChange={ (e) => chatState.setUserInput(e.target.value) }
+                onCompositionStart={ handleComposition }
+                onCompositionUpdate={ handleComposition }
+                onCompositionEnd={ handleComposition }
                 onPressEnter={ onPressEnter }/>
             <Button
                 type="primary"
                 size='middle'
-                style={{ margin: '.55rem .55rem .55rem 0' }}
+                style={{ margin: '11px .55rem 11px 0' }}
                 disabled={ chatState.userInput === '' || chatState.loading }
                 icon={<UploadOutlined />}
                 onClick={ onClick }/>

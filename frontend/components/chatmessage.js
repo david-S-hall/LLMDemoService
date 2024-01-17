@@ -41,10 +41,11 @@ function Markdown ( {children} ) {
                         </div>
                         <SyntaxHighlighter
                             wrapLongLines={true}
-                            {...props}
+                            children={String(children).replace(/\n$/, '')}
                             style={codeTheme}
                             language={match[1]}
                             PreTag="div"
+                            {...props}
                         >
                             {String(children).replace(/\n$/, '')}
                         </SyntaxHighlighter>
