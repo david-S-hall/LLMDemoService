@@ -28,7 +28,7 @@ codeTheme['pre[class*="language-"]'].borderRadius = '0 0 .375rem .375rem'
 codeTheme['pre[class*="language-"]'].fontSize = '0.7rem'
 codeTheme['code[class*="language-"]'].fontSize = '0.9rem'
 
-function Markdown ( {children} ) {
+function Markdown ( {content} ) {
     return (
         <ReactMarkdown className={styles.markdown} rehypePlugins={[rehypeHighlight, remarkGfm, rehypeRaw]} 
             components={{
@@ -41,13 +41,18 @@ function Markdown ( {children} ) {
                         </div>
                         <SyntaxHighlighter
                             wrapLongLines={true}
-                            children={String(children).replace(/\n$/, '')}
                             style={codeTheme}
                             language={match[1]}
                             PreTag="div"
                             {...props}
                         >
-                            {String(children).replace(/\n$/, '')}
+                            {
+                                typeof children === 'object' ? 
+                                children.map((node) => {
+                                    return typeof node === 'object' ? String(node.props.children) : node}).join('') 
+                                : String(children).replace(/\n$/, '')
+                            }
+                            {/* {String(children).replace(/\n$/, '')} */}
                         </SyntaxHighlighter>
                         </Flex>
                     ) : (
@@ -58,7 +63,7 @@ function Markdown ( {children} ) {
                 }
             }}
         >
-        {children}
+        {content}
         </ReactMarkdown>
     )
 }
@@ -165,7 +170,7 @@ function AssistantMessage( { title, children, texts, chat_id, turn_idx, onFeedba
             <div style={{width: '100%'}}>
                 <Title level={5} style={{margin: 0}}>{title}</Title>
                 <div style={{padding: '5px 0'}} >
-                    <Markdown>{texts}</Markdown>
+                    <Markdown content={texts}>{texts}</Markdown>
                     { !loading ? 
                     <Feedback
                     chat_id={ chat_id }

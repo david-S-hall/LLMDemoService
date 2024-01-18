@@ -28,16 +28,16 @@ frontend:
     GOOGLE_SECRET: "GOOGLE_SECRET"
 
 llm:
-  model_1:
-    type: ChatGLM
-    llm_name_or_path: THUDM/chatglm3-6b
-    multi_gpu_model_cache_dir: ./cache/temp_model_dir
-    num_gpus: 1
-    fp16: false # true
-    quantization_bit: null
-    ptuning_checkpoint: null
-    pre_seq_len: null
-    prefix_projection: false
+  # model_1:
+  #   type: ChatGLM
+  #   llm_name_or_path: THUDM/chatglm3-6b
+  #   multi_gpu_model_cache_dir: ./cache/temp_model_dir
+  #   num_gpus: 1
+  #   fp16: false # true
+  #   quantization_bit: null
+  #   ptuning_checkpoint: null
+  #   pre_seq_len: null
+  #   prefix_projection: false
   # model_2:
   #   type: Qwen
   #   llm_name_or_path: Qwen/Qwen-7B-Chat
@@ -45,6 +45,10 @@ llm:
   #   fp16: false
   #   bf16: false
   #   quantization_bit: null
+  model_3:
+    type: InternLM
+    llm_name_or_path: internlm/internlm2-chat-7b
+    fp16: False
 
 embeddings:
   model_name: BAAI/bge-base-zh-v1.5

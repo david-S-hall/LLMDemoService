@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import ServerSentEvent, EventSourceResponse
 
 from langchain.embeddings import HuggingFaceBgeEmbeddings
-from backend.llm import QwenService, ChatGLMService
+import backend.llm as llms
 
 from arguments import (
     api_config,
@@ -41,11 +41,8 @@ app.add_middleware(
 print('Loading LLM model')
 models = {}
 for name, single_model in llm_config.items():
-    assert single_model.type.lower() in ['chatglm', 'qwen']
-    if single_model.type.lower() == 'chatglm':
-        model = ChatGLMService()
-    else:
-        model = QwenService()
+    assert single_model.type.lower() in ['chatglm', 'qwen', 'internlm']
+    model = getattr(llms, f'{single_model.type}Service')()
     model.load_model(single_model)
     models[name] = model
 model_names = list(llm_config.keys())
@@ -95,9 +92,12 @@ async def get_chat_response(args: ChatMessage):
     for key, val in args.model_dump().items():
         if val is not None and key not in ['select_model']:
             kwargs[key] = val
+
+    model_name = args.select_model.value if args.select_model.value is not None else model_names[0]
+    if llm_config[model_name].type == 'InternLM':
+        del kwargs['role']
     
     st_time = time.time()
-    model_name = args.select_model.value if args.select_model.value is not None else model_names[0]
     response, history = models[model_name]._call(**kwargs)
     end_time = time.time()
     data = {'response': response, 'history': history, 'inference_time': end_time-st_time}
@@ -110,10 +110,12 @@ async def get_stream_chat_response(args: ChatMessage, response: Response):
     response.headers['Cache-Control'] = 'no-cache'
     
     kwargs = {}
-    for key, val in args.model_dump().items():
+    for key, val in args.model_dump().items(): 
         if val is not None and key not in ['select_model']:
             kwargs[key] = val
     model_name = args.select_model.value if args.select_model.value is not None else model_names[0]
+    if llm_config[model_name].type == 'InternLM':
+        del kwargs['role']
     
     async def event_generator():
         response, history = '', []

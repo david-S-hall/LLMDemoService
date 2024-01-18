@@ -122,6 +122,11 @@ class ChatGLMService(LLM):
         return response, history
 
     def load_model(self, model_args=DEFAULT_CFG):
+        base_cfg = DEFAULT_CFG
+        for k, v in model_args.items():
+            setattr(base_cfg, k, v)
+        model_args = base_cfg
+
         self.model = self._load_model(model_args)
         if model_args.num_gpus > 1:
             self.load_model_on_gpus(model_args.llm_name_or_path,
@@ -134,12 +139,7 @@ class ChatGLMService(LLM):
                 trust_remote_code=True
             )
     
-    def _load_model(self, model_args):
-        base_cfg = DEFAULT_CFG
-        for k, v in model_args.items():
-            setattr(base_cfg, k, v)
-        model_args = base_cfg
-        
+    def _load_model(self, model_args):        
         config = AutoConfig.from_pretrained(model_args.llm_name_or_path, trust_remote_code=True)
         config.pre_seq_len = model_args.pre_seq_len
         config.prefix_projection = model_args.prefix_projection
