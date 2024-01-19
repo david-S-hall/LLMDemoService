@@ -21,13 +21,12 @@ yarn config set registry https://registry.npmmirror.com --global
 
 pip install -r requirements.txt
 
-if ! test -e /etc/supervisor; then
-    mkdir /etc/supervisor
-fi
-rm /etc/supervisor/supervisord.conf
-ln -s $SHELL_FOLDER/configs/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
-
 # 运行基础服务
 service mongodb start
 python -m scripts.build_runtime_config
-supervisord -c configs/supervisor/supervisord.conf
+python -m scripts.build_supervisor_global
+# supervisord -c configs/supervisor/supervisord.conf
+supervisord -c /etc/supervisor/supervisord.conf
+supervisorctl update
+
+

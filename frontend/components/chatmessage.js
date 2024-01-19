@@ -29,6 +29,14 @@ codeTheme['pre[class*="language-"]'].fontSize = '0.7rem'
 codeTheme['code[class*="language-"]'].fontSize = '0.9rem'
 
 function Markdown ( {content} ) {
+    const recursive_node_parse = ( nodes ) => {
+        return typeof nodes === 'string' ? 
+            String(nodes).replace(/\n$/, '') :
+            nodes.map((node) => {
+                return typeof node === 'string' ? node :
+                node?.props?.children ? recursive_node_parse(node.props.children) : ''
+            }).join('') 
+    }
     return (
         <ReactMarkdown className={styles.markdown} rehypePlugins={[rehypeHighlight, remarkGfm, rehypeRaw]} 
             components={{
@@ -46,13 +54,7 @@ function Markdown ( {content} ) {
                             PreTag="div"
                             {...props}
                         >
-                            {
-                                typeof children === 'object' ? 
-                                children.map((node) => {
-                                    return typeof node === 'object' ? String(node.props.children) : node}).join('') 
-                                : String(children).replace(/\n$/, '')
-                            }
-                            {/* {String(children).replace(/\n$/, '')} */}
+                            { recursive_node_parse(children) }
                         </SyntaxHighlighter>
                         </Flex>
                     ) : (

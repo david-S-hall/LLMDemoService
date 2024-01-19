@@ -55,7 +55,9 @@ for category in config:
     wrap(category, config[category])
 
 # after process
+import backend.llm as llms
 for name, single_llm_cfg in llm_config.items():
+    single_llm_cfg['Model'] = getattr(llms, f'{single_llm_cfg["type"]}Service', None)
     llm_config[name] = DictProxy(single_llm_cfg)
 
 api_config.model['url'] = f'{api_config.model["host"]}:{api_config.model["port"]}'

@@ -1,10 +1,7 @@
 import os
-import sys
-import shutil
 import json
 import yaml
 from urllib.parse import urljoin
-from termcolor import colored
 
 from arguments import *
 

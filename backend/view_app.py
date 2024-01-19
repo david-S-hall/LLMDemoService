@@ -19,7 +19,7 @@ llm = LLMAPI()
 
 app = FastAPI(
     title="View layer service API for UI",
-    version='0.0.1'
+    version='0.1.1'
 )
 
 origins = [

@@ -18,7 +18,7 @@ from arguments import (
 
 app = FastAPI(
     title="Core LLM & Embeddings model service API",
-    version='0.0.1'
+    version='0.1.1'
 )
 
 ### CORS (Cross-Origin Resource Sharing)
@@ -42,7 +42,8 @@ print('Loading LLM model')
 models = {}
 for name, single_model in llm_config.items():
     assert single_model.type.lower() in ['chatglm', 'qwen', 'internlm']
-    model = getattr(llms, f'{single_model.type}Service')()
+    model = single_model.Model()
+    # model = getattr(llms, f'{single_model.type}Service')()
     model.load_model(single_model)
     models[name] = model
 model_names = list(llm_config.keys())

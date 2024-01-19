@@ -1,4 +1,5 @@
 pyyaml
+configparser
 pdfplumber
 PyPDF2
 python-docx
