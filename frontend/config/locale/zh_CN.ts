@@ -7,6 +7,8 @@ export default {
     'chat.delete': '删除',
     'chat.delete.modal_title': '确认删除聊天',
     'chat.invalidID': '未找到聊天记录ID',
+    'chat.agent.toolPendingMsg': '**<font size=2>→ 调用相关工具中...</font>**\n\n',
+    'chat.agent.toolDoneMsg': '**<font size=2>→ 调用完成</font>**\n\n',
     'chat.feedback.title': '评价详细信息',
     'chat.feedback.description': '请在下面的文本框中写下具体原因',
     'chat.feedback.successMsg': '反馈成功',

@@ -64,7 +64,8 @@ class LLMAPI(object):
                  top_p=0.7,
                  repetition_penalty=1.0,
                  select_model=None,
-                 stream=False):
+                 stream=False,
+                 **kwargs):
         payload = {
             'query': query,
             'history': history,
@@ -72,7 +73,8 @@ class LLMAPI(object):
             'temperature': temperature,
             'top_p': top_p,
             'repetition_penalty': repetition_penalty,
-            'select_model': select_model
+            'select_model': select_model,
+            **kwargs
         }
         
         if stream:

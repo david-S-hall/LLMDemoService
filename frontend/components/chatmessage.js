@@ -28,7 +28,7 @@ codeTheme['pre[class*="language-"]'].borderRadius = '0 0 .375rem .375rem'
 codeTheme['pre[class*="language-"]'].fontSize = '0.7rem'
 codeTheme['code[class*="language-"]'].fontSize = '0.9rem'
 
-function Markdown ( {content} ) {
+function Markdown ( { content, loading } ) {
     const recursive_node_parse = ( nodes ) => {
         return typeof nodes === 'string' ? 
             String(nodes).replace(/\n$/, '') :
@@ -38,7 +38,9 @@ function Markdown ( {content} ) {
             }).join('') 
     }
     return (
-        <ReactMarkdown className={styles.markdown} rehypePlugins={[rehypeHighlight, remarkGfm, rehypeRaw]} 
+        <ReactMarkdown
+            className={loading ? styles.markdown+' '+styles.loading: styles.markdown} 
+            rehypePlugins={[rehypeHighlight, remarkGfm, rehypeRaw]} 
             components={{
                 code({node, inline, className, children, ...props}) {
                     const match = /language-(\w+)/.exec(className || '')
@@ -65,7 +67,7 @@ function Markdown ( {content} ) {
                 }
             }}
         >
-        {content}
+        { content === '' ? '&zwnj;' : content}
         </ReactMarkdown>
     )
 }
@@ -172,7 +174,7 @@ function AssistantMessage( { title, children, texts, chat_id, turn_idx, onFeedba
             <div style={{width: '100%'}}>
                 <Title level={5} style={{margin: 0}}>{title}</Title>
                 <div style={{padding: '5px 0'}} >
-                    <Markdown content={texts}>{texts}</Markdown>
+                    <Markdown content={texts} loading={loading} >{texts}</Markdown>
                     { !loading ? 
                     <Feedback
                     chat_id={ chat_id }

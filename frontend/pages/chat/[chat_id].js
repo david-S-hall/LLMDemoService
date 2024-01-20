@@ -78,6 +78,10 @@ export default function Chat ({ chatInfo, session }) {
       } else {
         const data = JSON.parse(e.data);
         llmMsg.texts = llmMsg.texts + data.texts;
+        if (data.tool_start)
+          llmMsg.texts = llmMsg.texts + intlState.intl.formatMessage({id: 'chat.agent.toolPendingMsg'})
+        if (data.tool_end)
+          llmMsg.texts = llmMsg.texts + intlState.intl.formatMessage({id: 'chat.agent.toolDoneMsg'})
       }
       setTimeout(() => {chatState.setChatHistory([...curHistory, userMsg, llmMsg]);}, 100)
     });

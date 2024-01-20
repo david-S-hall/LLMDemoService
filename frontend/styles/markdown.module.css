@@ -7,6 +7,24 @@
     margin: 0;
 }
 
+.markdown.loading > :is(*):last-child::after {
+    content: '▌';
+    animation: blinker 1s step-end infinite;
+}
+
+@keyframes blinker {
+    0% {
+      visibility: visible;
+    }
+    50% {
+      visibility: hidden;
+    }
+    100% {
+      visibility: visible;
+    }
+}
+
+
 .markdown > :is(*){
     word-wrap: break-word;
     word-break: break-word;

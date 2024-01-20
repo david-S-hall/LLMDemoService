@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import ServerSentEvent, EventSourceResponse
 
 from langchain.embeddings import HuggingFaceBgeEmbeddings
-import backend.llm as llms
 
 from arguments import (
     api_config,
@@ -18,7 +17,7 @@ from arguments import (
 
 app = FastAPI(
     title="Core LLM & Embeddings model service API",
-    version='0.1.1'
+    version='0.3.1'
 )
 
 ### CORS (Cross-Origin Resource Sharing)
@@ -40,12 +39,10 @@ app.add_middleware(
 # ================== Initialize components =================== #
 print('Loading LLM model')
 models = {}
-for name, single_model in llm_config.items():
-    assert single_model.type.lower() in ['chatglm', 'qwen', 'internlm']
-    model = single_model.Model()
-    # model = getattr(llms, f'{single_model.type}Service')()
-    model.load_model(single_model)
-    models[name] = model
+for name, single_cfg in llm_config.items():
+    assert single_cfg.type.lower() in ['chatglm', 'qwen', 'internlm']
+    models[name] = single_cfg.modelobj
+    models[name].load_model(single_cfg)
 model_names = list(llm_config.keys())
 
 print('Loading embedding function')
@@ -72,7 +69,7 @@ class ChatRole(str, Enum):
     system = 'system'
     user = 'user'
     assistant = 'assistant'
-    observation = 'observaton'
+    observation = 'observation'
 
 model_enum = {k: k for k in model_names}
 model_enum.update({'DEFAULT': None})
@@ -85,25 +82,26 @@ class ChatMessage(BaseModel):
     temperature: float = Field(None, ge=0, le=1.0, description='Inference parameter Temerpature')
     top_p: float = Field(None, ge=0, le=1.0, description='Inference parameter Top p')
     repetition_penalty: float = Field(None, ge=0, description='To avoid repeating')
+    use_agent: bool = Field(False, description='Employ the agent using tools or not.')
     select_model: SelectModels = Field(model_names[0], description='The model selected for inference')
 
 @app.post('/api/chat')
 async def get_chat_response(args: ChatMessage):
     kwargs = {}
     for key, val in args.model_dump().items():
-        if val is not None and key not in ['select_model']:
+        if val is not None and key not in ['select_model', 'use_agent']:
             kwargs[key] = val
 
-    model_name = args.select_model.value if args.select_model.value is not None else model_names[0]
-    if llm_config[model_name].type == 'InternLM':
-        del kwargs['role']
-    
-    st_time = time.time()
-    response, history = models[model_name]._call(**kwargs)
-    end_time = time.time()
-    data = {'response': response, 'history': history, 'inference_time': end_time-st_time}
-    return {'msg': '生成成功', 'data': data}
-
+    try:
+        model_name = args.select_model.value if args.select_model.value is not None else model_names[0]
+        
+        st_time = time.time()
+        response, history = models[model_name]._call(**kwargs)
+        end_time = time.time()
+        data = {'response': response, 'history': history, 'inference_time': end_time-st_time}
+        return {'msg': '生成成功', 'status': 200, 'data': data}
+    except Exception as e:
+        return {'msg': f'生成失败，{e}', 'stutus': 500, 'data': {}}
 
 @app.post('/api/stream_chat')
 async def get_stream_chat_response(args: ChatMessage, response: Response):
@@ -112,15 +110,17 @@ async def get_stream_chat_response(args: ChatMessage, response: Response):
     
     kwargs = {}
     for key, val in args.model_dump().items(): 
-        if val is not None and key not in ['select_model']:
+        if val is not None and key not in ['select_model', 'use_agent']:
             kwargs[key] = val
-    model_name = args.select_model.value if args.select_model.value is not None else model_names[0]
-    if llm_config[model_name].type == 'InternLM':
-        del kwargs['role']
     
+    model_name = args.select_model.value if args.select_model.value is not None else model_names[0]
+    call_func = models[model_name]._stream_call
+    if args.use_agent and models[model_name].agent_chat:
+        call_func = models[model_name].agent_chat
+
     async def event_generator():
         response, history = '', []
-        for response, history in models[model_name]._stream_call(**kwargs):
+        for response, history in call_func(**kwargs):
             yield {
                 "event": "stream_chat",
                 "retry": 15000,

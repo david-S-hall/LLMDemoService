@@ -7,6 +7,8 @@ export default {
     'chat.delete': 'Delete',
     'chat.delete.modal_title': 'Delete chat',
     'chat.invalidID': 'Invalid Chat ID',
+    'chat.agent.toolPendingMsg': '**<font size=2>→ Calling agent toolbox...</font>**\n\n',
+    'chat.agent.toolDoneMsg': '**<font size=2>→ Done</font>**\n\n',
     'chat.feedback.title': 'Provide additional feedback',
     'chat.feedback.description': 'What do you like about the response?',
     'chat.feedback.successMsg': 'Feedback success',

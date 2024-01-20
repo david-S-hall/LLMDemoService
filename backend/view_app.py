@@ -184,7 +184,7 @@ async def stream_chat(args: Query, req: Request, res: Response):
     user_id = str(chat['user_id'])
 
     async def event_generator(request: Request):
-        last_msg = ""
+        save_msg, last_msg = "", ""
         for result in generate_stream_response(
             llm=llm, query=args.query, history=chat['llm_history']
         ):
@@ -192,12 +192,20 @@ async def stream_chat(args: Query, req: Request, res: Response):
                 print("连接已中断")  
                 break
 
+            # token parsing
+            token = result['response'][len(last_msg):]
+            if token == '[TOOLPENDING]':
+                data = {'texts': '', 'tool_start': True}
+            elif token == '[TOOLDONE]':
+                data = {'texts': '', 'tool_end': True}
+            else:
+                data = {'texts': token}
+                save_msg += token
+    
             yield {
                 "event": "stream_chat",
                 "retry": 15000,
-                "data": json.dumps({
-                    'texts': result['response'][len(last_msg):],
-                })
+                "data": json.dumps(data)
             }
             last_msg = result['response']
 
@@ -205,7 +213,7 @@ async def stream_chat(args: Query, req: Request, res: Response):
         chat['history'].append({
             'query': args.query,
             'prompt': result['prompt'],
-            'response': result['response']
+            'response': save_msg
         })
         mongotool.update(chat_id, chat, collection='chat')
 
@@ -213,7 +221,7 @@ async def stream_chat(args: Query, req: Request, res: Response):
 
         # after process
         if user_id != '' and len(chat['history']) == 1:
-            summary = generate_summary(llm, args.query, result['response'])
+            summary = generate_summary(llm, args.query, save_msg)
             user_profile = mongotool.get(None, {'user_id': user_id}, 'user')
             clist = user_profile['chat_list']
 

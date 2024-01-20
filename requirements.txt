@@ -1,8 +1,10 @@
 pyyaml
 configparser
+pypinyin
 pdfplumber
 PyPDF2
 python-docx
+wikipedia
 accelerate
 transformers
 langchain

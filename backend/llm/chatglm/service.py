@@ -1,15 +1,15 @@
 import os
-import json
-from typing import Dict, Union, List, Optional
-
+from typing import Dict, Union, List
+import importlib
 import torch
-
 from accelerate import load_checkpoint_and_dispatch
-from langchain.llms.base import LLM
 from transformers import AutoModel, AutoTokenizer, AutoConfig
 from transformers.generation.logits_process import LogitsProcessor
 from transformers.generation.utils import LogitsProcessorList
 
+import processing_interface.agent as Agent
+from backend.llm.base import BaseLLMService
+from .transform import build_chat_input, process_response
 
 class ChatGLMCFG:
     num_gpus = 1
@@ -23,6 +23,12 @@ class ChatGLMCFG:
     pre_seq_len = None
     prefix_projection = False
 
+SYSTEM_INFO = {
+    "role": "system",
+    "content": "尽可能回答问题，同时可以使用以下工具：",
+    # "content": "Answer the following questions as best as you can. You have access to the following tools:",
+}
+
 DEFAULT_CFG = ChatGLMCFG()
 
 
@@ -34,21 +40,7 @@ class InvalidScoreLogitsProcessor(LogitsProcessor):
         return scores
 
 
-def build_chat_input(tokenizer, query, history=None, role="user", metadata=''):
-    if history is None:
-        history = []
-    input_ids = []
-    for item in history:
-        content = item["content"]
-        if item["role"] == "system" and "tools" in item:
-            content = content + "\n" + json.dumps(item["tools"], indent=4, ensure_ascii=False)
-        input_ids.extend(tokenizer.build_single_message(item["role"], item.get("metadata", ""), content))
-    input_ids.extend(tokenizer.build_single_message(role, metadata, query))
-    input_ids.extend([tokenizer.get_command("<|assistant|>")])
-    return tokenizer.batch_encode_plus([input_ids], return_tensors="pt", is_split_into_words=True)
-
-
-class ChatGLMService(LLM):
+class ChatGLMService(BaseLLMService):
     max_length: int = 8192
     tokenizer: object = None
     model: object = None
@@ -60,9 +52,52 @@ class ChatGLMService(LLM):
     def _llm_type(self) -> str:
         return "ChatGLM"
 
+    def agent_chat(self, query, history=[], max_turn=5, **kwargs):
+        importlib.reload(Agent)
+        toolbox = Agent.DefaultAgentToolBox()
+
+        if history is None: history = []
+        if len(history) == 0 or history[0]['role'] != 'system':
+            history = [SYSTEM_INFO.copy()] + history
+        history[0]['tools'] = toolbox.get_tool_descriptions()
+
+        _role = kwargs.get('role', 'user')
+        _query = query
+        last_response = ''
+
+        for i in range(max_turn):
+            kwargs['role'] = _role
+
+            temp_response = ''
+            stop = True
+            for response, history in self._stream_call(_query, history, **kwargs):
+                if isinstance(response, str):
+                    if response[:len(temp_response)] != temp_response:
+                        last_response += '\n\n'
+                    
+                    last_response += response[len(temp_response):]
+                    yield last_response, history
+                    temp_response = response
+
+                elif isinstance(response, dict):
+                    if response['parameters'] == '[PENDING]':
+                        if last_response[-len('[TOOLPENDING]'):] != '[TOOLPENDING]':
+                            last_response += '[TOOLPENDING]'
+                    else:
+                        _query = toolbox.use_tool(response['name'], response['parameters'])
+                        _role = 'observation'
+                        if last_response[-len('[TOOLPENDING]'):] == '[TOOLPENDING]':
+                            last_response += '[TOOLDONE]'
+
+                    yield last_response, history
+                    stop = False
+
+            if stop: break
+
+    @torch.inference_mode()
     def _stream_call(self,
                      query: str,
-                     history: List[Dict] = None,
+                     history: List[Dict] = [],
                      role: str = "user",
                      past_key_values=None,
                      max_length: int = 8192,
@@ -73,32 +108,51 @@ class ChatGLMService(LLM):
                      return_past_key_values=False,
                      **kwargs) -> str:
 
-        for payload in self.model.stream_chat(self.tokenizer, query, history,
-                                              role, past_key_values, max_length,
-                                              do_sample, top_p, temperature,
-                                              logits_processor, return_past_key_values, **kwargs):
-            yield payload[0], payload[1]
+        if history is None:
+            history = []
+        if logits_processor is None:
+            logits_processor = LogitsProcessorList()
+        logits_processor.append(InvalidScoreLogitsProcessor())
+        eos_token_id = [self.tokenizer.eos_token_id, self.tokenizer.get_command("<|user|>"),
+                        self.tokenizer.get_command("<|observation|>")]
+        gen_kwargs = {"max_length": max_length, "do_sample": do_sample, "top_p": top_p,
+                      "temperature": temperature, "logits_processor": logits_processor, **kwargs}
+        if past_key_values is None:
+            inputs = build_chat_input(self.tokenizer, query, history=history, role=role)
+        else:
+            inputs = build_chat_input(self.tokenizer, query, role=role)
+        inputs = inputs.to(self.model.device)
+        if past_key_values is not None:
+            past_length = past_key_values[0][0].shape[0]
+            if self.model.transformer.pre_seq_len is not None:
+                past_length -= self.model.transformer.pre_seq_len
+            inputs.position_ids += past_length
+            attention_mask = inputs.attention_mask
+            attention_mask = torch.cat((attention_mask.new_ones(1, past_length), attention_mask), dim=1)
+            inputs['attention_mask'] = attention_mask
+        history.append({"role": role, "content": query})
+        for outputs in self.model.stream_generate(**inputs, past_key_values=past_key_values,
+                                                  eos_token_id=eos_token_id, return_past_key_values=return_past_key_values,
+                                                  **gen_kwargs):
+            if return_past_key_values:
+                outputs, past_key_values = outputs
+            outputs = outputs.tolist()[0][len(inputs["input_ids"][0]):-1]
+            response = self.tokenizer.decode(outputs)
+            if response and response[-1] != "�":
+                response, new_history = process_response(response, history)
+                yield response, new_history
 
+    @torch.inference_mode()
     def _call(self,
               query,
-              history=None,
+              history: List[Dict] = [],
               role='user',
-              metadata='',
               num_beams=1,
               do_sample=True,
               top_p=0.8,
               temperature=0.1,
               logits_processor = None,
               **kwargs) -> str:
-
-        # response, _ = self.model.chat(
-        #     self.tokenizer,
-        #     query,
-        #     history=[], #self.history,
-        #     temperature=self.temperature,
-        #     max_length=self.max_length,
-        #     **kwargs
-        # )
 
         history = [] if history is None else history
 
@@ -108,7 +162,7 @@ class ChatGLMService(LLM):
 
         gen_kwargs = {"max_length": self.max_length, "num_beams": num_beams, "do_sample": do_sample, "top_p": top_p,
                       "temperature": temperature, "logits_processor": logits_processor, **kwargs}
-        inputs = build_chat_input(self.tokenizer, query, history=history, role=role, metadata=metadata)
+        inputs = build_chat_input(self.tokenizer, query, history=history, role=role)
         inputs = inputs.to(self.model.device)
         eos_token_id = [self.tokenizer.eos_token_id, self.tokenizer.get_command("<|user|>"),
                         self.tokenizer.get_command("<|observation|>")]
@@ -117,7 +171,7 @@ class ChatGLMService(LLM):
         response = self.tokenizer.decode(outputs)
 
         history.append({"role": role, "content": query})
-        response, history = self.model.process_response(response, history)
+        response, history = process_response(response, history)
 
         return response, history
 
