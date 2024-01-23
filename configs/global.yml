@@ -3,6 +3,8 @@ base:
   frontend_route_def: configs/route.yml
   cache_dir: ./cache
   data_dir: ./data
+  agent_type: built-in # choices: [built-in, rewoo, react, null]
+  default_lang: en
 
 api:
   model:
@@ -48,7 +50,7 @@ llm:
   # model_3:
   #   type: InternLM
   #   llm_name_or_path: internlm/internlm2-chat-7b
-  #   fp16: false
+  #   fp16: true
 
 embeddings:
   model_name: BAAI/bge-base-zh-v1.5

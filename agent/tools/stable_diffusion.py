@@ -1,5 +1,6 @@
 import requests
 import json
+import random
 from typing import Annotated
 
 from .base import register_tool
@@ -10,29 +11,33 @@ __all__ = ['call_sd_api']
 API_URL = "https://stablediffusionapi.com/api/v3/text2img"
 API_KEY = ''
 
+# API_URL = 'http://0.0.0.0:7860/api/v1/text2img'
+
 @register_tool
 def call_sd_api(
-    prompt: Annotated[str, 'Text prompt for generating image, keywords separate by comma.', True],
+    prompt: Annotated[str, 'Text prompt for generating image, using `English` keywords separated by comma.', True],
 ) -> str:
     """
-    Generate a 512*512 image described as `prompt` by stable diffusion api.
+    Generate a image described as `prompt` in English by stable diffusion api.
     """
+    
+    height, width = random.choices([(512, 512), (768, 512), (512, 768)], weights=[6, 2, 2])[0]
 
     payload = json.dumps({
         "key": API_KEY,
         "prompt": prompt,
-        "negative_prompt": None,
-        "width": "512",
-        "height": "512",
-        "samples": "1",
-        "num_inference_steps": "20",
-        "seed": None,
-        "guidance_scale": 7.5,
+        "negative_prompt": '',
+        "height": height,
+        "width": width,
+        "samples": 1,
+        "num_inference_steps": 30,
+        "guidance_scale": 8,
         "safety_checker": 'yes',
         "multi_lingual": "no",
         "panorama": "no",
         "self_attention": "no",
         "upscale": "no",
+        "seed": None,
         "embeddings_model": None,
         "webhook": None,
         "track_id": None
@@ -44,6 +49,8 @@ def call_sd_api(
         response = requests.request("POST", API_URL, headers=headers, data=payload)
         payback = json.loads(response.text)
         img_link = payback['output'][0]
-        return str({'markdown_link': f'![image]({img_link}'})
+        # return str({'markdown_link': f'![image]({img_link}'})
+        return str({'image_link': f'![image]({img_link}'})
+        # return str({'image_link': f'<img src="{img_link}" alt="image" />'})
     except Exception as e:
         return '图片生成失败，检查配置'

@@ -3,6 +3,8 @@ from langchain.llms.base import LLM
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.generation import GenerationConfig
 
+from agent.transform import trans_general_history
+
 
 class QwenCFG:
     num_gpus = 1
@@ -36,6 +38,7 @@ class QwenService(LLM):
                      generation_config=None,
                      **kwargs) -> str:
         response = ''
+        history = trans_general_history(history) if history is not None else history
         history.append([query, response])
         for response in self.model.chat_stream(self.tokenizer, query, history, system,
                                                stop_words_ids, logits_processor, generation_config,
@@ -46,15 +49,15 @@ class QwenService(LLM):
 
     def _call(self,
               query,
-              history = [],
+              history=None,
               max_length=2048,
               top_p=0.7,
               temperature=0.95,
               **kwargs):
         
         gen_kwargs = {"max_length": max_length, "top_p": top_p, "temperature": temperature}
+        history = trans_general_history(history) if history is not None else history
         response, history = self.model.chat(self.tokenizer, query, history=history, **gen_kwargs)
-        history = history + [[None, response]]
 
         return response, history
     

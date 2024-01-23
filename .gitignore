@@ -2,6 +2,7 @@ data/
 cache/
 __pycache__/
 **/__pycache__/
+test.py
 
 configs/supervisor/*_supervisor.conf
 

@@ -243,7 +243,7 @@ def main():
                 host=api_config.view['host'],
                 port=api_config.view['port'],
                 reload=True,
-                reload_dirs=['backend', 'processing_interface'])
+                reload_dirs=['backend', 'processing_interface', 'agent'])
     
 if __name__ == '__main__':
     main()

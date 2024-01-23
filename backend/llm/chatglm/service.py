@@ -1,14 +1,14 @@
 import os
 from typing import Dict, Union, List
-import importlib
 import torch
 from accelerate import load_checkpoint_and_dispatch
 from transformers import AutoModel, AutoTokenizer, AutoConfig
 from transformers.generation.logits_process import LogitsProcessor
 from transformers.generation.utils import LogitsProcessorList
 
-import processing_interface.agent as Agent
 from backend.llm.base import BaseLLMService
+from agent.tools import DefaultAgentToolBox
+from agent.transform import trans_agent_history
 from .transform import build_chat_input, process_response
 
 class ChatGLMCFG:
@@ -53,8 +53,7 @@ class ChatGLMService(BaseLLMService):
         return "ChatGLM"
 
     def agent_chat(self, query, history=[], max_turn=5, **kwargs):
-        importlib.reload(Agent)
-        toolbox = Agent.DefaultAgentToolBox()
+        toolbox = DefaultAgentToolBox()
 
         if history is None: history = []
         if len(history) == 0 or history[0]['role'] != 'system':
@@ -110,6 +109,8 @@ class ChatGLMService(BaseLLMService):
 
         if history is None:
             history = []
+        history = trans_agent_history(history)
+
         if logits_processor is None:
             logits_processor = LogitsProcessorList()
         logits_processor.append(InvalidScoreLogitsProcessor())
@@ -154,7 +155,9 @@ class ChatGLMService(BaseLLMService):
               logits_processor = None,
               **kwargs) -> str:
 
-        history = [] if history is None else history
+        if history is None:
+            history = []
+        history = trans_agent_history(history)
 
         if logits_processor is None:
             logits_processor = LogitsProcessorList()

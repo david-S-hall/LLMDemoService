@@ -1,9 +1,10 @@
 from typing import Dict, List
-
 import torch
-
 from langchain.llms.base import LLM
 from transformers import AutoTokenizer, AutoModelForCausalLM
+
+from agent.transform import trans_general_history
+
 
 class InternLMCFG:
     num_gpus = 1
@@ -38,6 +39,7 @@ class InternLMService(LLM):
                      temperature=0.8,
                      **kwargs) -> str:
 
+        history = trans_general_history(history) if history is not None else history
         for response, history in self.model.stream_chat(self.tokenizer, query, history, max_length,
                                                         do_sample, temperature, top_p, **kwargs):
             yield response, history
@@ -51,6 +53,7 @@ class InternLMService(LLM):
               temperature=0.1,
               **kwargs) -> str:
         
+        history = trans_general_history(history) if history is not None else history
         response, history = self.model.chat(
             self.tokenizer,
             query,

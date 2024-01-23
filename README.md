@@ -1,5 +1,7 @@
 # A Simple LLM DEMO Service for Deployment
 
+For deployment of LLMs on GPU devices, support **naive** chat & **agent** chat.
+
 ![Chat UI](image/chat_page.png)
 
 ## Installation
@@ -35,6 +37,30 @@ sudo ./install.sh # need superuser
 ```
 
 ## Configuration
+
+### Agent Chat
+
+Revise the field `agent_type` & `default_lang` in `configs/global.yml` to change the agent mode for LLM.
+
+```yaml
+base:
+  agent_type: null
+  default_lang: en
+```
+
+**agent_type**
+- `null`: naive chat mode
+- `built-in`: only for **ChatGLM3** built-in tool usage in this version 
+- `react`: [ReAct](https://arxiv.org/abs/2210.03629) agent
+- `rewoo`: [ReWOO](https://arxiv.org/abs/2305.18323) agent
+
+**default_lang**
+- `zh`: Simplified Chinese prompts
+- `en`: English prompts
+
+**NOTE**：
+1. The built-in agent of ChatGLM3 conflicts with ReAct agent
+2. The capacity of agents depends on tools defined in `agent/tools`
 
 ### OAuth
 
