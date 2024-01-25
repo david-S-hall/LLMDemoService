@@ -119,7 +119,7 @@ def react_agent_chat(llm, query, chat_history=[], lang='ZH', max_turn=4, **gen_k
                     pass
             elif action != '':
                 yield total_response+'[TOOLPENDING]', chat_history
-        
+
         # Build valid format response to avoid duplicated actions
         valid_response = f'Thought:{thought}\nAction:{action}\nAction Input:{action_input}\n' if action != '' else response+'\n'
         inner_history.append(dict(role='assistant', content=valid_response))
@@ -198,7 +198,7 @@ def parse_action(message):
     thought_match = re.findall(pattern, message)
     thought = thought_match[0].strip() if len(thought_match) > 0 else ''
     
-    pattern = r"Action:([^\n]*)\nAction Input:(.*)"
+    pattern = r"Action:([^\n]*)\nAction *Input:(.*)"
     action_match = re.findall(pattern, message)
     
     if len(action_match) == 0:

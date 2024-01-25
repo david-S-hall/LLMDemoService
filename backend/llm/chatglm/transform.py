@@ -21,8 +21,6 @@ def process_response(output, history):
     content = ""
     history = deepcopy(history)
 
-    # print(json.dumps({'texts': output}, ensure_ascii=False))
-
     for response in output.split("<|assistant|>"):
         if "\n" in response:
             metadata, content = response.split("\n", maxsplit=1)

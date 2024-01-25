@@ -30,7 +30,7 @@ codeTheme['code[class*="language-"]'].fontSize = '0.9rem'
 
 function Markdown ( { content, loading } ) {
     const recursive_node_parse = ( nodes ) => {
-        return typeof nodes === 'string' ? 
+        return typeof nodes === 'undefined' ? '' : typeof nodes === 'string' ? 
             String(nodes).replace(/\n$/, '') :
             nodes.map((node) => {
                 return typeof node === 'string' ? node :

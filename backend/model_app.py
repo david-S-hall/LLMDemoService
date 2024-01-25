@@ -104,7 +104,7 @@ async def get_chat_response(args: ChatMessage):
         return {'msg': f'生成失败，{e}', 'stutus': 500, 'data': {}}
 
 @app.post('/api/stream_chat')
-async def get_stream_chat_response(args: ChatMessage, response: Response):
+async def get_stream_chat_response(args: ChatMessage, request: Request, response: Response):
     response.headers['Content-Type'] = 'text/event-stream'
     response.headers['Cache-Control'] = 'no-cache'
     
@@ -118,9 +118,13 @@ async def get_stream_chat_response(args: ChatMessage, response: Response):
     if args.use_agent and models[model_name].agent_chat:
         call_func = models[model_name].agent_chat
 
-    async def event_generator():
+    async def event_generator(request: Request):
         response, history = '', []
         for response, history in call_func(**kwargs):
+            if await request.is_disconnected():  
+                print("连接已中断")  
+                break
+
             yield {
                 "event": "stream_chat",
                 "retry": 15000,
@@ -134,7 +138,7 @@ async def get_stream_chat_response(args: ChatMessage, response: Response):
         
         yield {"event": "stream_chat", "retry": 0, "data": '[DONE]'}
     
-    return EventSourceResponse(event_generator())
+    return EventSourceResponse(event_generator(request))
 
 
 class EmbeddingData(BaseModel):

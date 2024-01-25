@@ -16,7 +16,7 @@ def search_wikipedia(
     doc_content_chars_max: Annotated[int, 'Limitation on max char numbers of content', False] = 2000
 ) -> str:
     """
-    Get the info of `query` on Wikipedia.
+    Search for only text materials related related to `query` on Wikipedia
     """
     try:
         wikipedia.set_lang(lang)

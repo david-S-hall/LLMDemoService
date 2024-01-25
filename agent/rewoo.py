@@ -10,7 +10,7 @@ from .transform import trans_agent_history
 
 # The Chinese Prompts for ReWOO
 
-PLANNER_PROMPT_ZH = """你是一个任务分解器, 你需要将用户的问题拆分成多个简单的子任务。
+PLANNER_PROMPT_ZH = """你是一个任务分解器, 你需要将用户的问题拆分成一个或多个简单的子任务。
 请拆分出多个子任务项，从而能够得到充分的信息以解决问题, 返回格式参考如下案例：
 ```
 Plan: 当前子任务要解决的问题
@@ -23,17 +23,17 @@ Plan: 当前子任务要解决的问题
 2. 每个 #E[id] 所执行的内容应与当前Plan解决的问题严格对应。
 3. 工具参数可以是正常输入text, 或是 #E[依赖的索引], 或是两者都可以。
 4. 工具名称必须从以下工具中选择：
-{tool_description}\n-----
+{tool_description}
 注意：每个Plan后有且仅有一个#E[id]。
 开始！"""
 
 WORKER_PROMPT_ZH = """
-想法: {thought}\n回答: {action_resp}\n
+想法: {thought}\n回答: {action_resp}
 """
 
 SOLVER_PROMPT_ZH = """解决接下来的任务或者问题。为了帮助你，我们提供了一些相关的计划
 和相应的解答。注意其中一些信息可能存在噪声，因此你需要谨慎的使用它们。\n
-{question}\n{worker_log}现在开始根据以上信息回答这个任务或者问题
+问题: {question}\n{worker_log}现在开始根据以上信息回答这个任务或者问题
 ---------"""
 
 REFORMAT_PROMPT_ZH = """回答格式错误: {err_msg}。 请重新回答:
@@ -52,7 +52,7 @@ Plan: the problem to be solved by the current subtask
 Plan: the problem to be solved by the current subtask
 #E1 = func_2[#E1]
 ```\n
-For each `#E[id] = tool_name[tool_param]`:
+For each `Plan:plan context\n#E[id] = tool_name[tool_param]`:
 1. #E[id] is used to store the execution result of the plan
 id and can be used as a placeholder.
 2. The content implemented by each #E[id] should strictly
@@ -65,25 +65,16 @@ Note: Each plan should be followed by only one #E.
 Start! """
 
 WORKER_PROMPT_EN = """
-Thought: {thought}\nResponse: {action_resp}\n
+Thought: {thought}\nResponse: {action_resp}
 """
 
 SOLVER_PROMPT_EN = """Solve the following task or problem.
 To assist you, we provide some plans and corresponding evidences
 that might be helpful. Notice that some of these information
 contain noise so you should trust them with caution.\n
-{question}\n{worker_log}Now begin to solve the task or problem.
+Question: {question}\n{worker_log}Now begin to solve the task or problem.
 Respond with the answer directly with no extra words.
 ---------"""
-
-SOLVER_PROMPT_ZH = """解决接下来的任务或者问题。为了帮助你，我们提供了一些相关的计划
-和相应的解答。注意其中一些信息可能存在噪声，因此你需要谨慎的使用它们。\n
-{question}\n{worker_log}现在开始根据以上信息回答这个任务或者问题
----------"""
-
-REFORMAT_PROMPT_ZH = """回答格式错误: {err_msg}。 请重新回答:
-"""
-
 
 REFORMAT_PROMPT_EN = """Response Format Error: {err_msg}. Please reply again:
 """
@@ -105,6 +96,7 @@ def rewoo_agent_chat(llm, query, chat_history=[], lang='ZH', max_turn=2, **gen_k
 
     dialog_formatter = LMTemplateParser(META_TEMPLATE)
     toolbox = DefaultAgentToolBox()
+    tool_names = list(toolbox.get_tool_descriptions().keys())
 
     total_response = ""
     reformat_request = ''
@@ -136,6 +128,7 @@ def rewoo_agent_chat(llm, query, chat_history=[], lang='ZH', max_turn=2, **gen_k
         total_response += '[TOOLPENDING]'
         yield total_response, chat_history
 
+        # print(actions[action_id], actions_input[action_id])
         prev_ptrs = re.findall(r'#E\d+', actions_input[action_id])
 
         for prev_ptr in prev_ptrs:
@@ -143,11 +136,15 @@ def rewoo_agent_chat(llm, query, chat_history=[], lang='ZH', max_turn=2, **gen_k
             actions_input[action_id] = actions_input[action_id].replace(
                 prev_ptr, actions_response[ptr_num])
 
-        try:
-            action_return = toolbox.use_tool(actions[action_id], trans_param_dict(actions_input[action_id]))
-        except Exception as e:
-            action_return = 'Invalid tool usage'
-        actions_response.append(action_return)
+        if actions[action_id] not in tool_names:
+            thoughts[action_id] = ''
+            action_return = ''
+        else:
+            try:
+                action_return = toolbox.use_tool(actions[action_id], trans_param_dict(actions_input[action_id]))
+            except Exception as e:
+                action_return = 'Invalid tool usage'
+        actions_response.append(action_return.rstrip())
 
         total_response += '[TOOLDONE]'
         yield total_response, chat_history
@@ -160,6 +157,7 @@ def rewoo_agent_chat(llm, query, chat_history=[], lang='ZH', max_turn=2, **gen_k
     chat_history.append(dict(role='assistant', content=''))
     final_prompt = dialog_formatter.parse_template(solver_prompt)
 
+    # print(final_prompt)
     for final_response, _ in llm.stream_chat(final_prompt, history=[], **gen_kwargs):
         chat_history[-1]['content'] = final_response
         yield total_response+final_response, chat_history

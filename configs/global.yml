@@ -4,7 +4,7 @@ base:
   cache_dir: ./cache
   data_dir: ./data
   agent_type: built-in # choices: [built-in, rewoo, react, null]
-  default_lang: en
+  default_lang: zh
 
 api:
   model:

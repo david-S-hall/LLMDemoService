@@ -17,7 +17,7 @@ def get_weather(
         city_name: Annotated[str, 'The name of the city to be queried.', True],
 ) -> str:
     """
-    Get the current weather for `city_name`
+    Get the current weather of the `city_name` city.
     """
 
     if not isinstance(city_name, str):

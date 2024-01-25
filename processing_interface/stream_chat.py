@@ -23,15 +23,13 @@ def generate_stream_response(llm, query, history):
 
     prompt = PROMPT_TEMPLATE.format(content=query)
 
-    gen_kwargs = {
-        'temperature': 0.1,
-        'top_p': 0.7,
-        'repetition_penalty': 1.0, 
+    gen_kwargs = { 
         'select_model': MODEL_NAME,
     }
  
     # ReWOO Agent
     if agent_type == 'rewoo':
+        gen_kwargs['repetition_penalty'] = 1.05
         for response, history in rewoo_agent_chat(llm, prompt, history, lang=default_lang, **gen_kwargs):
             yield {'response': response}
 
@@ -39,8 +37,8 @@ def generate_stream_response(llm, query, history):
     elif agent_type == 'react':
         gen_kwargs['temperature'] = 0.1
         gen_kwargs['repetition_penalty'] = 1.05
-        for response, history in rewoo_agent_chat(llm, prompt, history, lang=default_lang, **gen_kwargs):
-            yield {'response': response}\
+        for response, history in react_agent_chat(llm, prompt, history, lang=default_lang, **gen_kwargs):
+            yield {'response': response}
     
     # Built-in Agent for ChatGLM or No-Agent
     else:
