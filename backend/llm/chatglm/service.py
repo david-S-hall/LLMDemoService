@@ -1,4 +1,5 @@
 import os
+import importlib
 from typing import Dict, Union, List
 import torch
 from accelerate import load_checkpoint_and_dispatch
@@ -7,7 +8,7 @@ from transformers.generation.logits_process import LogitsProcessor
 from transformers.generation.utils import LogitsProcessorList
 
 from backend.llm.base import BaseLLMService
-from agent.tools import DefaultAgentToolBox
+import agent as Agent
 from agent.transform import trans_agent_history
 from .transform import build_chat_input, process_response
 
@@ -53,7 +54,8 @@ class ChatGLMService(BaseLLMService):
         return "ChatGLM"
 
     def agent_chat(self, query, history=[], max_turn=5, **kwargs):
-        toolbox = DefaultAgentToolBox()
+        importlib.reload(Agent)
+        toolbox = Agent.DefaultAgentToolBox()
 
         if history is None: history = []
         if len(history) == 0 or history[0]['role'] != 'system':

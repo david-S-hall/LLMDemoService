@@ -27,7 +27,10 @@ def get_weather(
         city_name = ''.join([w[0] for w in pinyin(city_name, style=0)])
 
     key_selection = {
-        "current_condition": ["temp_C", "FeelsLikeC", "humidity", "weatherDesc", "observation_time"],
+        "current_condition": [
+            "temp_C", "FeelsLikeC", "humidity", "weatherDesc",
+            "localObsDateTime", "observation_time"
+        ],
     }
     import requests
     try:

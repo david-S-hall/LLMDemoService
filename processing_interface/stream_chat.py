@@ -50,4 +50,4 @@ def generate_stream_response(llm, query, history):
 
     yield {'prompt': prompt, 'response': response, 'history': history}
 
-    # print(json.dumps(history, indent='  ', ensure_ascii=False))
+    print(json.dumps(history, indent='  ', ensure_ascii=False))

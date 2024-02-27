@@ -53,7 +53,10 @@ export default function ChatLayout({ children }) {
           style={{ top: '45vh' }}/>
 
         <Header style={{ padding: '0 .5rem', height: '3rem', lineHeight: '3rem'}} >
+          <Flex align='center'>
           <div style={{fontSize: '1.3em', fontWeight: 'bold', verticalAlign: 'middle', margin: '0px 15px'}}>Chat</div>
+          <iframe src="https://ghbtns.com/github-btn.html?user=david-S-hall&repo=LLMDemoService&type=star&count=false&size=large" frameborder="0" scrolling="0" width="100" height="30" title="GitHub"></iframe>
+          </Flex>
         </Header>
 
         <Content>

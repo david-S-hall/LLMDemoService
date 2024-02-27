@@ -4,7 +4,7 @@ import { getAPIRoutes } from "lib/config";
 
 const APIRoutes = getAPIRoutes();
 
-export default async function handler (req, res) {
+const handler = async (req, res) => {
     const session = await getServerSession(req, res, authOptions)
     const user_id = session ? session.user.id : '';
     const processList = req.query.process;
@@ -63,3 +63,5 @@ export default async function handler (req, res) {
         }
     }
 }
+
+export default handler;

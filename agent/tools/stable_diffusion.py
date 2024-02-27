@@ -11,7 +11,7 @@ __all__ = ['call_sd_api']
 API_URL = "https://stablediffusionapi.com/api/v3/text2img"
 API_KEY = ''
 
-API_URL = 'http://0.0.0.0:7860/api/v1/text2img'
+# API_URL = 'http://0.0.0.0:7860/api/v1/text2img'
 
 @register_tool
 def call_sd_api(
@@ -32,15 +32,11 @@ def call_sd_api(
         "samples": 1,
         "num_inference_steps": 30,
         "guidance_scale": 8,
-        "safety_checker": 'yes',
+        "safety_checker": "yes",
         "multi_lingual": "no",
         "panorama": "no",
         "self_attention": "no",
-        "upscale": "no",
-        # "seed": None,
-        # "embeddings_model": None,
-        # "webhook": None,
-        # "track_id": None
+        "upscale": "no"
     })
 
     headers = {'Content-Type': 'application/json'}

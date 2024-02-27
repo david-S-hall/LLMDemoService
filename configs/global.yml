@@ -3,8 +3,14 @@ base:
   frontend_route_def: configs/route.yml
   cache_dir: ./cache
   data_dir: ./data
-  agent_type: built-in # choices: [built-in, rewoo, react, null]
   default_lang: zh
+  agent_type: built-in # choices: [built-in, rewoo, react, null]
+  agent_func_list:
+    - search_google
+    - search_wikipedia
+    - get_weather
+    - call_sd_api
+    # - random_number_generator
 
 api:
   model:
